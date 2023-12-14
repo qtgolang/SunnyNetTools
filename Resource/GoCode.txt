@@ -1,0 +1,224 @@
+package main
+
+//仅允许使用官方包
+import (
+	"bytes"
+	"strings"
+)
+
+//  脚本最下方定义了一些常用函数
+
+// 请勿修改此结构体
+type HTTP struct {
+	uniqueId int                        //请求唯一ID
+	Break    bool                       //是否需要设置断点调试,设置后可以在软件界面修改数据
+	Display  bool                       //是否需要显示到列表中 [仅Type=1有效]
+	Type     int                        //1=发起请求,2=请求完成,3=请求失败 [不可修改]
+	PID      int                        //由哪个进程发送的数据,若是为0表示通过代理连接
+	URL      string                     //[仅Type=1 可修改]请求的URL
+	Method   string                     //[仅Type=1 可修改]
+	Header   http.Header                //请求或响应的协议头
+	Body     []byte                     //请求或响应的Body
+	SetAgent func(ProxyUrl string) bool //设置代理,[仅Type=1时有效],格式 socket5://admin:123456@127.0.0.1:8888 或 http://admin:123456@127.0.0.1:8888
+	Response struct {                   //[如果Type=1 操作此对象数据,将不发出请求]
+		Header    http.Header //响应的协议头
+		Body      []byte      //响应的数据
+		StateCode int         //响应的状态码
+	}
+}
+
+// 脚本回调事件 -> HTTP发起请求、HTTP响应请求、HTTP请求错误
+func HttpRequestCallbackFunction(Sunny *HTTP) {
+
+	//在URL中查找指定字符串
+
+	if Sunny.Type == 3 {
+		//默认为true,修改为false,不显示到列表中
+		Sunny.Display = false
+	}
+	if Sunny.Type == 1 {
+		Index := strings.Index(Sunny.URL, "baidu.com/123456")
+		if Index != -1 {
+			HTTPResponse200JSon(Sunny)
+		}
+	}
+}
+
+// 请勿修改此结构体
+type WebSocket struct {
+	uniqueId         int                                     //请求唯一ID
+	Display          bool                                    //是否需要显示到列表中 [仅Type=2、3有效]
+	Type             int                                     //1=连接成功,2=客户端发送数据,3=客户端收到数据,4=连接断开 [不可修改]
+	PID              int                                     //由哪个进程发送的数据,若是为0表示通过代理连接
+	URL              string                                  //连接的URL
+	Method           string                                  //连接时的Method 一般为 GET
+	Header           http.Header                             //连接时携带的协议头
+	MessageType      int                                     //Websocket消息Body的类型1=Text 2=Binary 8=Close 9=Ping 10=Pong
+	Body             []byte                                  //即将发送、接收的数据 //如果将数据修改未空,表示取消本次发送、接收
+	SendDataToServer func(MessageType int, data []byte) bool //向服务器发送数据的函数
+	SendDataToClient func(MessageType int, data []byte) bool //向客户端发送数据的函数
+	Close            func() bool                             //关闭、断开此WebSocket会话
+}
+
+// WebSocket回调事件 -> 发送消息、收到消息、连接成功、连接断开
+func WebSocketCallbackFunction(Sunny *WebSocket) {
+	if Sunny.Type == 2 {
+		Log(string(Sunny.Body))
+	}
+}
+
+// 请勿修改此结构体
+type TcpSocket struct {
+	uniqueId         int                          //请求唯一ID
+	Display          bool                         //是否需要显示到列表中 [仅Type=2、3有效]
+	Type             int                          //0=即将连接,1=连接成功,2=客户端发送数据,3=客户端收到数据,4=连接断开
+	PID              int                          //由哪个进程发送的数据,若是为0表示通过代理连接
+	Body             []byte                       //即将发送、接收的数据 //如果将数据修改未空,表示取消本次发送、接收
+	LocalAddress     string                       //本地地址
+	RemoteAddress    string                       //远程地址
+	SetConnectionIP  func(NewAddress string) bool //重定向到新地址,[仅Type=0时有效]
+	SetAgent         func(ProxyUrl string) bool   //设置代理,[仅Type=0时有效],格式socket5://admin:123456@127.0.0.1:8888
+	SendDataToServer func(data []byte) bool       //向服务器发送数据的函数
+	SendDataToClient func(data []byte) bool       //向客户端发送数据的函数
+	Close            func() bool                  //关闭、断开此TCP会话
+}
+
+// tcp回调事件 -> 即将连接、发送消息、收到消息、连接成功、连接断开
+func tcpCallbackFunction(Sunny *TcpSocket) {
+	//Sunny.SetAgent("socket5://127.0.0.1:2022")
+	if Sunny.Type == 2 {
+		Log(string(Sunny.Body))
+	}
+}
+
+type UdpSocket struct {
+	Display       bool   //是否需要显示到列表中 [仅Type=2、3有效]
+	uniqueId      int    //请求唯一ID
+	Type          int    //1=客户端发送数据,2=客户端收到数据,3=连接断开
+	PID           int    //由哪个进程发送的数据,若是为0表示通过代理连接
+	LocalAddress  string //本地地址
+	RemoteAddress string //远程地址
+	Body          []byte //即将发送、接收的数据 //如果将数据修改未空,表示取消本次发送、接收
+}
+
+// udp回调事件 -> 发送消息、收到消息、连接断开
+func udpCallbackFunction(Sunny *UdpSocket) {
+	if Sunny.Type == 2 {
+		Log(string(Sunny.Body))
+	}
+}
+
+//内置函数
+/*
+----------------------------------------------------------------------------------------------------------------
+打印数据
+            Log(args1,args2)    可在左侧查看脚本日志,参数数量不限,参数类型不限,无返回值
+----------------------------------------------------------------------------------------------------------------
+加密数据
+            GoMD5(data,key)     取数据MD5，返回值:字节数组([]byte)
+                data:要加密的数据,类型可以是string 也可以是[]byte
+                key :可不传,传入表示取HMAC MD5,传入类型可以是string,也可以是[]byte
+
+            GoSHA1(data,key)     取数据SHA1，返回值:字节数组([]byte)
+                data:要加密的数据,类型可以是string 也可以是[]byte
+                key :可不传,传入表示取HMAC SHA1,传入类型可以是string,也可以是[]byte
+
+            GoSHA256(data,key)     取数据SHA256，返回值:字节数组([]byte)
+                data:要加密的数据,类型可以是string 也可以是[]byte
+                key :可不传,传入表示取HMAC SHA256,传入类型可以是string,也可以是[]byte
+
+            GoSHA512(data,key)     取数据SHA512，返回值:字节数组([]byte)
+                data:要加密的数据,类型可以是string 也可以是[]byte
+                key :可不传,传入表示取HMAC SHA512,传入类型可以是string,也可以是[]byte
+
+            GoHexEncode(data)     十六进制编码,返回值:字符串(string)
+                data:要操作的数据,类型可以是string 也可以是[]byte
+
+            GoHexDecode(data)     十六进制解码,返回值:字节数组([]byte)
+                data:要操作的数据,类型是string
+
+            GoBase64Encode(data)     Base64编码,返回值:字符串(string)
+                data:要操作的数据,类型可以是string 也可以是[]byte
+
+            GoRsaPrivateDecrypt(key, data)  RSA私钥解密 两个返回值
+                                                       返回值1:解密结果 类型 []byte
+                                                       返回值2:错误信息 类型 error 成功等于 nil
+                key:私钥    格式"-----BEGIN RSA PRIVATE KEY----- ....... -----END RSA PRIVATE KEY-----"
+                data:要操作的数据,类型是[]byte
+
+            GoRsaPublicEncrypt(key, data)  RSA公钥加密 两个返回值
+                                                       返回值1:加密结果 类型 []byte
+                                                       返回值2:错误信息 类型 error 成功等于 nil
+                key:公钥    格式"-----BEGIN PUBLIC KEY----- ..... -----END PUBLIC KEY-----"
+                data:要操作的数据,类型是[]byte
+
+
+----------------------------------------------------------------------------------------------------------------
+发起HTTP请求
+            GoHTTPRequest(method, url , header)     发起HTTP请求,共有三个返回值:
+                                                    返回值1:响应的Body    类型:([]byte)
+                                                    返回值2:响应的Header  类型:(http.Header)
+                                                    返回值3:错误信息      类型:(error)
+                method: 请求方式 例如:"POST","GET" 等               类型:字符串(string)
+                url:    请求地址 例如:"https://baidu.com/123456"    类型:字符串(string)
+                header: 请求地址 例如:"https://baidu.com/123456"    类型:http.Header    (这个参数可忽略不传)
+
+
+----------------------------------------------------------------------------------------------------------------
+AES、DES 加密解密
+        GoAESCBCEncode(key,iv,Padding, data)    AES CBC 加密
+        GoAESCBCDecrypt(key,iv,Padding, data)   AES CBC     解密
+        GoAESECBEncode(key,Padding, data)       AES EBC 加密
+        GoAESECBDecrypt(key,Padding, data)      AES EBC     解密
+        GoDESCBCEncode(key,iv,Padding, data)    DES CBC 加密
+        GoDESCBCDecrypt(key,iv,Padding, data)   DES CBC     解密
+        GoDESECBEncode(key,Padding, data)       DES EBC 加密
+        GoDESECBDecrypt(key,Padding, data)      DES EBC     解密
+        Go3DESCBCEncode(key,iv,Padding, data)   3DES CBC 加密
+        Go3DESCBCDecrypt(key,iv,Padding, data)  3DES CBC    解密
+        Go3DESECBEncode(key,Padding, data)      3DES EBC 加密
+        Go3DESECBDecrypt(key,Padding, data)     3DES EBC    解密
+
+以上函数参数一致:
+    key         可以是字符串(string)也可以是字节数组([]byte)
+    iv          可以是字符串(string)也可以是字节数组([]byte)
+    Padding     类型字符串 "NoPadding" "Zero" "Iso10126" "AnsiX923" "Iso97971" "pkcs5"
+    data        类型字节数组([]byte)
+----------------------------------------------------------------------------------------------------------------
+HTTP请求快速响应
+
+    HTTPResponse404(Sunny *HTTP)        传入HTTP回调函数的Sunny对象   响应状态码404,没有内容
+    HTTPResponse200(Sunny *HTTP)        传入HTTP回调函数的Sunny对象   响应状态码200,没有内容
+    HTTPResponse200IMG(Sunny *HTTP)     传入HTTP回调函数的Sunny对象   响应状态码200,内容为1像素的图片
+    HTTPResponse200Array(Sunny *HTTP)   传入HTTP回调函数的Sunny对象   响应状态码200,响应空的JSON数组
+    HTTPResponse200JSon(Sunny *HTTP)    传入HTTP回调函数的Sunny对象   响应状态码200,响应空的JSON对象
+----------------------------------------------------------------------------------------------------------------
+数据操作
+
+    StringReplaceAll(data, old, new)    返回值:替换后的字符串(string)
+        data:类型 字符串(string)    原始文本
+        old: 类型 字符串(string)    要替换的旧文本
+        new: 类型 字符串(string)    要替换的新文本
+
+    BytesReplaceAll(data, old, new)    返回值:替换后的字节数组([]byte)
+        data:类型 字节数组([]byte)    原始字节数组
+        old: 类型 字节数组([]byte)    要替换的旧字节数组
+        new: 类型 字节数组([]byte)    要替换的新字节数组
+
+    Contains(a,b)        返回值:逻辑型(bool)    a中是否包含b
+        a:字符串(string) 或 字节数组([]byte)
+        b:字符串(string) 或 字节数组([]byte)
+
+    StringIndex(a,b)     返回值:整数型(int)     a中不存在b,返回-1
+        a:字符串(string)
+        b:字符串(string)
+
+    BytesIndex(a,b)     返回值:整数型(int)      a中不存在b,返回-1
+        a:字节数组([]byte)
+        b:字节数组([]byte)
+
+    BytesAdd(a,b)     返回值:字节数组([]byte)     a + b 返回新的字节数组
+        a:字节数组([]byte)
+        b:字节数组([]byte)
+----------------------------------------------------------------------------------------------------------------
+*/

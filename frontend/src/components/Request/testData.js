@@ -1,0 +1,28 @@
+export function getTestData() {
+    let s = `POST https://192.168.31.154:808/basic_service/txCtrl?txcode=A3341AB03&appVersion=1.2.3.4&user_info=88e28f43-de6f-449f-8e37-b9c7bd5236da HTTP/1.1
+Accept: application/json
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh-Hans;q=0.9
+AppVersion: 2.1.5.002
+C-App-Id: 03_64e1367661ee4091acc04ce98f3660e6
+Connection: keep-alive
+Content-Length: 960
+Content-Type: application/json
+Cookie: SESSION=51305c8b-e3de-4563-9961-3f6a70de447b
+DeviceId: 0299F370-A73F-4609-8A07-38388EBE7128
+DeviceType: iOS
+Host: yunbusiness.ccb.com
+MBC-User-Agent: MBCLOUDCCB/iPhone/iOS16.0/2.15/2.1.5/6BAD5ED9-C5A4-44CA-ACAF-1E950DC12CC7/chinamworld/1170*2532/2.1.5.002/1.0/0299F370-A73F-4609-8A07-38388EBE7128/iPhone12Pro/iOS/iOS16.0
+MBC-User-Info: TUJDQ0IvKi8vKi8wMDAwMDAwMDAwMDAwMC8qL2lQaG9uZS8qL2lPUy8qLzE2LjAvKi9pUGhvbmUvKi8xMTcwKjIzOTEvKi8wMjk5RjM3MC1BNzNGLTQ2MDktOEEwNy0zODM4OEVCRTcxMjgvKi8vKi8vKi8wLjAwMDAwMC8qLzAuMDAwMDAwLyovMA==
+MBSKEY_INFO: Wt9nsZ5NCW0oRWXGEEWJmsrHTazqBZ1IhTUHAAzvjbLX87Ae51ANyb4KFK/wWkXP&XtHLQxfHE9AifZIh
+UA: IPHONE
+User-Agent: %E5%BB%BA%E8%A1%8C%E7%94%9F%E6%B4%BB/2023092501 CFNetwork/1390 Darwin/22.0.0
+clientAllVer: 2.1.5.002
+clientInfo: {"deviceId":"0299F370-A73F-4609-8A07-38388EBE7128","appVersion":"2.1.5.002","osType":"iOS","mac":"0","osVersion":"iOS16.0","dFingerprint":"88e28f43-de6f-449f-8e37-b9c7bd5236da","gpsCityCode":"510700","cityCode":"110000","deviceModel":"iPhone 12 Pro"}
+mbc_user_info: TUJDQ0IvKi8vKi8wMDAwMDAwMDAwMDAwMC8qL2lQaG9uZS8qL2lPUy8qLzE2LjAvKi9pUGhvbmUvKi8xMTcwKjIzOTEvKi8wMjk5RjM3MC1BNzNGLTQ2MDktOEEwNy0zODM4OEVCRTcxMjgvKi8vKi8vKi8wLjAwMDAwMC8qLzAuMDAwMDAwLyovMC8qL2djajAy
+nsdsid: 88e28f43-de6f-449f-8e37-b9c7bd5236da
+
+{"MEB_ID":"YSM202311021616204","FEED_AD_SHOW_STATUS":0,"APPEND_PARAM":"0299F370-A73F-4609-8A07-38388EBE7128|@|118.117.60.231|@|Wifi|@|104.7484555869041|@|31.7763596584553|@|02|@|16.0|@|iPhone 12 Pro|@||@|510700|@|110000|@|b8e94117814a76c314709544fb64288c0cc620e3|@|2.1.5.002","IS_CARE":"0","regionCode":"510700","LTT":"31.7763596584553","DEVICE_NO":"","SECOND_AD_TYPE_LIST":[{"SECOND_AD_TYPE":"6"},{"SECOND_AD_TYPE":"7"},{"SECOND_AD_TYPE":"10"},{"SECOND_AD_TYPE":"11"},{"SECOND_AD_TYPE":"12"},{"SECOND_AD_TYPE":"24"},{"SECOND_AD_TYPE":"25"},{"SECOND_AD_TYPE":"37"},{"SECOND_AD_TYPE":"38"},{"SECOND_AD_TYPE":"39"},{"SECOND_AD_TYPE":"40"},{"SECOND_AD_TYPE":"41"},{"SECOND_AD_TYPE":"42"},{"SECOND_AD_TYPE":"75"},{"SECOND_AD_TYPE":"93"},{"SECOND_AD_TYPE":"94"},{"SECOND_AD_TYPE":"95"},{"SECOND_AD_TYPE":"96"},{"SECOND_AD_TYPE":"181"}],"REAL_REGION_CODE":"510700","CHANNEL_TYPE":"14","MD5_CONTENT":"","chnlType":"1","REGION_CODE":"110000","LGT":"104.7484555869041"}`
+
+    return s.replaceAll("\r", "").replaceAll("\n", "\r\n")
+}

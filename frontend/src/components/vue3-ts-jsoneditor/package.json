@@ -1,0 +1,86 @@
+{
+  "name": "vue3-ts-jsoneditor",
+  "version": "2.9.0",
+  "author": {
+    "name": "Alex Guzey",
+    "email": "alex.guzey@gmail.com"
+  },
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./dist/vanilla-jsoneditor.js": "./dist/vanilla-jsoneditor.js",
+    "./styles.css": "./dist/style.css"
+  },
+  "imports": {
+    "#query-languages.mjs": "./dist/index2.mjs"
+  },
+  "types": "dist/JsonEditorPlugin.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bestkolobok/vue3-jsoneditor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bestkolobok/vue3-jsoneditor/issues"
+  },
+  "scripts": {
+    "dev": "vite",
+    "deploy": "sh deploy.sh patch",
+    "deploy:minor": "sh deploy.sh minor",
+    "deploy:major": "sh deploy.sh major",
+    "build": "run-p type-check build-only",
+    "build:gh": "VITECONFIG_build_lib=false VITECONFIG_build_rollupOptions=false VITECONFIG_build_cssCodeSplit=true VITECONFIG_build_outDir=gh-dist VITECONFIG_base='/vue3-jsoneditor' run-p build-only",
+    "preview": "vite preview --port 4173",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --noEmit",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "vanilla-jsoneditor": "^0.17.3",
+    "vue": "^3.2.37"
+  },
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.1.0",
+    "@types/jsoneditor": "^9.5.1",
+    "@types/node": "^18.6.1",
+    "@vitejs/plugin-vue": "^2.3.3",
+    "@vitejs/plugin-vue-jsx": "^1.3.10",
+    "@vue/eslint-config-prettier": "^7.0.0",
+    "@vue/eslint-config-typescript": "^11.0.0",
+    "@vue/tsconfig": "^0.1.3",
+    "eslint": "^8.5.0",
+    "eslint-plugin-vue": "^9.0.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.5.1",
+    "rollup-plugin-typescript2": "^0.32.1",
+    "sass": "^1.53.0",
+    "sass-loader": "^13.0.0",
+    "typescript": "~4.7.4",
+    "vite": "^2.9.12",
+    "vite-plugin-chunk-split": "^0.2.5",
+    "vite-plugin-env-config": "^2.0.0",
+    "vite-plugin-libcss": "^1.0.5",
+    "vue-tsc": "^0.38.1"
+  },
+  "keywords": [
+    "vue",
+    "jsoneditor",
+    "json",
+    "editor"
+  ],
+  "funding": [
+    "https://uahelp.monobank.ua/",
+    "https://bank.gov.ua/en/news/all/natsionalniy-bank-vidkriv-spetsrahunok-dlya-zboru-koshtiv-na-potrebi-armiyi",
+    "https://www.comebackalive.in.ua/",
+    "https://armysos.com.ua/donate/",
+    "http://wings-phoenix.org.ua/en/about-fund/",
+    "https://novaposhta.ua/eng/",
+    "https://voices.org.ua/en/donat/",
+    "https://www.unicef.org.uk/donate/donate-now-to-protect-children-in-ukraine/",
+    "https://www.paypal.com/donate/?cmd=_s-xclick&hosted_button_id=FYFZPVQN8J7YC&source=url",
+    "https://novaukraine.org/"
+  ]
+}
