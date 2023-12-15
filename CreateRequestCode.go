@@ -167,6 +167,92 @@ func (e *CreateRequest) ELang(module string) string {
 		code += "局_响应文本 ＝ 到文本 (局_响应字节集)\n"
 		code += "调试输出 (局_响应文本)\n\n"
 	}
+	if module == "网页_访问" || module == "网页_访问_对象" {
+		code += ".子程序 " + e.FuncName + ", , 公开, 本子程序由Sunny中间件生成,请配合 [精易模块] 使用。 " + e.URL.Path + "\n"
+		BytesType := e.IsBytesType()
+		code += ".局部变量 局_网址, 文本型, , , \n"
+		if BytesType {
+			code += ".局部变量 局_提交数据, 字节集, , , \n"
+		} else {
+			code += ".局部变量 局_提交数据, 文本型, , , \n"
+		}
+		code += ".局部变量 局_协议头, 类_POST数据类, , , \n"
+
+		if e.Cookie != "" {
+			code += ".局部变量 局_提交Cookie, 文本型, , , \n"
+		}
+		code += ".局部变量 局_响应字节集, 字节集, , , \n.局部变量 局_响应文本, 文本型, , , \n\n"
+
+		code += "局_网址 ＝ " + convertELangFormat(e.URL.String()) + "\n\n"
+
+		if BytesType {
+			code += "局_提交数据 ＝ 编码_BASE64解码 (“" + base64.StdEncoding.EncodeToString(e.Body) + "”)\n\n"
+		} else {
+			ok, d := e.IsFormData()
+			if ok {
+				code += d + "\n"
+			} else {
+				code += "局_提交数据 ＝ " + convertELangFormat(string(e.Body)) + "\n"
+			}
+		}
+		if e.Cookie != "" {
+			code += "局_提交Cookie ＝ 子文本替换 (" + convertELangFormat(e.Cookie) + ", “'”, #引号, , , 真)\n\n"
+		}
+
+		for k, v := range e.Header {
+			if strings.ToUpper(k) == "CONTENT-LENGTH" {
+				continue
+			}
+			if k == "Accept-Encoding" {
+				if len(v) < 1 {
+					code += "' 局_协议头.添加 (“" + k + "”, “”)\n"
+				} else {
+					code += "' 局_协议头.添加 (“" + k + "”, " + convertELangFormat(v[0]) + ")\n"
+				}
+				continue
+			}
+			if len(v) < 1 {
+				code += "局_协议头.添加 (“" + k + "”, “”)\n"
+			} else {
+				code += "局_协议头.添加 (“" + k + "”, " + convertELangFormat(v[0]) + ")\n"
+			}
+		}
+		if e.Cookie != "" {
+			code += "局_协议头.添加 (“Cookie”, 局_提交Cookie)\n\n"
+		}
+		if e.Method == "GET" {
+			code += "局_响应字节集 ＝ " + module + " (局_网址, 0, , , , 局_协议头.获取协议头数据 ())\n"
+		} else {
+			mod := "1"
+			if e.Method == "POST" {
+				mod = "1"
+			} else if e.Method == "HEAD" {
+				mod = "2"
+			} else if e.Method == "PUT" {
+				mod = "3"
+			} else if e.Method == "OPTIONS" {
+				mod = "4"
+			} else if e.Method == "DELETE" {
+				mod = "5"
+			} else if e.Method == "TRACE" {
+				mod = "6"
+			} else if e.Method == "CONNECT" {
+				mod = "7"
+			}
+			if BytesType {
+				if module == "网页_访问_对象" {
+					code += "局_响应字节集 ＝ " + module + " (局_网址, " + mod + ", , , , 局_协议头.获取协议头数据 (),,,,局_提交数据)\n"
+				} else {
+					code += "局_响应字节集 ＝ " + module + " (局_网址, " + mod + ", , , , 局_协议头.获取协议头数据 (),,,局_提交数据)\n"
+				}
+
+			} else {
+				code += "局_响应字节集 ＝ " + module + " (局_网址, " + mod + ", 局_提交数据, , , 局_协议头.获取协议头数据 ())\n"
+			}
+		}
+		code += "局_响应文本 ＝ 到文本 (局_响应字节集)\n"
+		code += "调试输出 (局_响应文本)\n\n"
+	}
 	return code
 }
 

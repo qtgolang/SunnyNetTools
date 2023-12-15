@@ -564,12 +564,26 @@ export async function EventsDo(arg) {
         }
             //恢复过滤器
         {
-            const Filter = JSON.parse(Args.Filter)
-            Object.keys(Filter).forEach((key) => {
-                const responseTypeFilter = window.vm.List.agGridApi.getFilterInstance(key);
-                responseTypeFilter.setModel(Filter[key]);
-            });
-            window.vm.List.agGridApi.onFilterChanged();
+            try {
+                const Filter = JSON.parse(Args.Filter)
+                Object.keys(Filter).forEach((key) => {
+                    const responseTypeFilter = window.vm.List.agGridApi.getFilterInstance(key);
+                    responseTypeFilter.setModel(Filter[key]);
+                });
+                window.vm.List.agGridApi.onFilterChanged();
+            } catch (e) {
+            }
+        }
+            //恢复列数据
+        {
+            try {
+                const Columns = JSON.parse(Args.Columns)
+                Object.keys(Columns).forEach((key) => {
+                    window.vm.List.columns[key] = Columns[key]
+                });
+            } catch (e) {
+            }
+
         }
             //111111111111111111111
             return

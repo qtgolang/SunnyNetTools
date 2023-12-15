@@ -43,7 +43,7 @@ export default {
           ElNotification({
             title: '免责申明',
             dangerouslyUseHTMLString: true,
-            duration: 30000,
+            duration: 10000,
             position: "bottom-right",
             offset: 25,
             message: '<span  style="color: red">本工具仅限 学术交流 技术探讨使用</span><br><span style="color: red">禁止用于一切非法用途</span><br><span style="color: red">否则造成的一切后果自负</span>',
@@ -52,7 +52,7 @@ export default {
             ElNotification({
               title: '证书安装',
               dangerouslyUseHTMLString: true,
-              duration: 30000,
+              duration: 5000,
               position: "bottom-right",
               offset: 25,
               message: '<span  style="color: #3ccbff">若是第一次使用,请查看"证书安装教程"</span>',

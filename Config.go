@@ -388,7 +388,21 @@ func RunHTTPRequestScriptCode(Conn *SunnyNet.HttpConn) bool {
 		h.Body = Body
 		Conn.Request.Body = io.NopCloser(bytes.NewBuffer(Body))
 	}
-	_URL, _Method, _Header, _Body, _Header2, _Body2, _StateCode, Display, _Break := httpFunc(Conn.Theology, Conn.Type, Conn.PID, h.URL, h.Method, h.Header, h.Body, Conn.SetAgent, make(http.Header), h.Response.Body, h.Response.StateCode, h.Display)
+	h.Conn = Conn
+
+	lock.Lock()
+	_Call := httpFunc
+	lock.Unlock()
+	if _Call == nil {
+		h.Break = 0
+		h.Display = true
+		h.Way = "HTTP"
+		h.PID = CommAnd.GetPidName(Conn.PID)
+		h.ClientIP = Conn.ClientIP
+		HashMap.SetRequest(Conn.Theology, h)
+		return true
+	}
+	_URL, _Method, _Header, _Body, _Header2, _Body2, _StateCode, Display, _Break := _Call(Conn.Theology, Conn.Type, Conn.PID, h.URL, h.Method, h.Header, h.Body, Conn.SetAgent, make(http.Header), h.Response.Body, h.Response.StateCode, h.Display)
 	h.Response.StateCode = _StateCode
 	if len(_Header2) > 0 {
 		Conn.Response = new(http.Response)
@@ -423,7 +437,6 @@ func RunHTTPRequestScriptCode(Conn *SunnyNet.HttpConn) bool {
 		Conn.Response.ContentLength = int64(len(_Body2))
 	}
 	h.Display = Display
-	h.Conn = Conn
 	if _URL != h.URL {
 		h.URL = _URL
 		Conn.Request.URL, _ = url.Parse(_URL)
@@ -474,7 +487,13 @@ func RunHTTPResponseScriptCode(Conn *SunnyNet.HttpConn) bool {
 		_ = Conn.Response.Body.Close()
 		Conn.Response.Body = io.NopCloser(bytes.NewBuffer(Body2))
 	}
-	_, _, _, _, _Header, _Body, _StateCode, _, _Break := httpFunc(Conn.Theology, Conn.Type, Conn.PID, URL, Method, Header, Body, Conn.SetAgent, Header2, Body2, StateCode, true)
+	lock.Lock()
+	_Call := httpFunc
+	lock.Unlock()
+	if _Call == nil {
+		return false
+	}
+	_, _, _, _, _Header, _Body, _StateCode, _, _Break := _Call(Conn.Theology, Conn.Type, Conn.PID, URL, Method, Header, Body, Conn.SetAgent, Header2, Body2, StateCode, true)
 
 	if Conn.Response.StatusCode != _StateCode {
 		Conn.Response.StatusCode = _StateCode
@@ -511,18 +530,36 @@ func RunHTTPErrorScriptCode(Conn *SunnyNet.HttpConn) {
 		Conn.Request.Body = io.NopCloser(bytes.NewBuffer(Body))
 	}
 	Body2 := []byte(Conn.GetError())
-	httpFunc(Conn.Theology, Conn.Type, Conn.PID, URL, Method, Header, Body, Conn.SetAgent, make(http.Header), Body2, -1, true)
+	lock.Lock()
+	_Call := httpFunc
+	lock.Unlock()
+	if _Call == nil {
+		return
+	}
+	_Call(Conn.Theology, Conn.Type, Conn.PID, URL, Method, Header, Body, Conn.SetAgent, make(http.Header), Body2, -1, true)
 }
 func RunWebSocketScriptCode(Conn *SunnyNet.WsConn) bool {
 	URL := Conn.Request.URL.String()
 	Header := Conn.Request.Header.Clone()
 	Method := Conn.Request.Method
 	Body := Conn.GetMessageBody()
-	Body2, Break := wsFunc(Conn.Theology, Conn.Type, Conn.Pid, URL, Method, Header, Conn.GetMessageType(), Body, Conn.SendToServer, Conn.SendToClient, Conn.Close)
+	lock.Lock()
+	_Call := wsFunc
+	lock.Unlock()
+	if _Call == nil {
+		return true
+	}
+	Body2, Break := _Call(Conn.Theology, Conn.Type, Conn.Pid, URL, Method, Header, Conn.GetMessageType(), Body, Conn.SendToServer, Conn.SendToClient, Conn.Close)
 	Conn.SetMessageBody(Body2)
 	return Break
 }
 func RunTcpScriptCode(Conn *SunnyNet.TcpConn) bool {
+	lock.Lock()
+	_Call := tcpFunc
+	lock.Unlock()
+	if _Call == nil {
+		return true
+	}
 	_Type := 0
 	if Conn.Type == public.SunnyNetMsgTypeTCPAboutToConnect {
 		_Type = 5
@@ -536,13 +573,19 @@ func RunTcpScriptCode(Conn *SunnyNet.TcpConn) bool {
 		_Type = 4
 	}
 	Body := Conn.GetBody()
-	Body2, Break := tcpFunc(Conn.Theology, _Type, Conn.Pid, Body, Conn.LocalAddr, Conn.RemoteAddr, Conn.SetConnectionIP, Conn.SetAgent, func(data []byte) bool { return Conn.SendToServer(data) != 0 }, func(data []byte) bool { return Conn.SendToClient(data) != 0 }, Conn.Close)
+	Body2, Break := _Call(Conn.Theology, _Type, Conn.Pid, Body, Conn.LocalAddr, Conn.RemoteAddr, Conn.SetConnectionIP, Conn.SetAgent, func(data []byte) bool { return Conn.SendToServer(data) != 0 }, func(data []byte) bool { return Conn.SendToClient(data) != 0 }, Conn.Close)
 	if _Type == 2 || _Type == 3 || _Type == 5 {
 		Conn.SetBody(Body2)
 	}
 	return Break
 }
 func RunUdpScriptCode(Conn *SunnyNet.UDPConn) bool {
+	lock.Lock()
+	_Call := udpFunc
+	lock.Unlock()
+	if _Call == nil {
+		return true
+	}
 	_Type := 0
 	if Conn.Type == public.SunnyNetUDPTypeClosed {
 		_Type = 3
@@ -551,7 +594,7 @@ func RunUdpScriptCode(Conn *SunnyNet.UDPConn) bool {
 	} else {
 		_Type = 2
 	}
-	Body2, Break := udpFunc(int(Conn.Theology), _Type, Conn.Pid, Conn.Data, Conn.LocalAddress, Conn.RemoteAddress)
+	Body2, Break := _Call(int(Conn.Theology), _Type, Conn.Pid, Conn.Data, Conn.LocalAddress, Conn.RemoteAddress)
 	Conn.Data = Body2
 	return Break
 }
@@ -618,6 +661,7 @@ type UserConfig struct {
 	HostsRules             []ConfigReplaceRules `json:"HostsRules"`
 	DarkTheme              uint8                `json:"DarkTheme"`
 	Filter                 string               `json:"Filter"`
+	Columns                string               `json:"Columns"`
 	MustTcp                struct {
 		Open  bool   `json:"open"`
 		Rules string `json:"Rules"`
@@ -637,7 +681,7 @@ func (c *UserConfig) loadDefaultValue() {
 		c.RequestCertManager = make(map[int]ConfigRequestCertManager)
 	}
 	if c.Filter == "" {
-		c.Filter = "eyLlk43lupTplb/luqYiOnsiZmlsdGVyVHlwZSI6InRleHQiLCJ0eXBlIjoibm90Q29udGFpbnMiLCJmaWx0ZXIiOiIwLzAifSwi5ZON5bqU57G75Z6LIjp7ImZpbHRlclR5cGUiOiJ0ZXh0IiwidHlwZSI6Im5vdEVxdWFsIiwiZmlsdGVyIjoiZXJyb3IifX0="
+		c.Filter = "{\"响应长度\":{\"filterType\":\"text\",\"type\":\"notContains\",\"filter\":\"0/0\"},\"响应类型\":{\"filterType\":\"text\",\"type\":\"notEqual\",\"filter\":\"error\"}}"
 	}
 	if c.DarkTheme == 0 {
 		c.DarkTheme = 1

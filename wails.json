@@ -16,5 +16,12 @@
       "-H=windowsgui",
       "-ManifestUACLevel=requireAdministrator"
     ]
+  },
+  "info": {
+    "companyName": "SunnyNet",
+    "productName": "SunnyNet",
+    "productVersion": "1.0.0.3",
+    "copyright": "SunnyNet抓包工具1.0.0.3",
+    "comments": "SunnyNet抓包工具1.0.0.3"
   }
 }

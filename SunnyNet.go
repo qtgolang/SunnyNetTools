@@ -6,6 +6,7 @@ import (
 	"changeme/MapHash"
 	"compress/flate"
 	"compress/gzip"
+	"encoding/base64"
 	"fmt"
 	"github.com/andybalholm/brotli"
 	"github.com/qtgolang/SunnyNet/SunnyNet"
@@ -44,8 +45,14 @@ func SaveData(args *JSON.SyJson) any {
 			CallJs("弹出错误提示", "保存配置失败:"+e.Error())
 		}
 		return true
+	case "列数据":
+		code, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(Data, "\\\\", "\\"))
+		_TmpLock.Lock()
+		GlobalConfig.Columns = string(code)
+		_ = GlobalConfig.saveToFile()
+		_TmpLock.Unlock()
+		return true
 	}
-	fmt.Println(ConfigurationName, Data)
 	return true
 }
 

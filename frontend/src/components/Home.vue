@@ -13,7 +13,7 @@ import ToolPanel from './ToolPanel.vue';
 import FindWindow from './Find/FindWindow.vue';
 import AgHeaderGroup from './Header.vue';
 import AgFooterGroup from './Footer.vue';
-import {CallGoDo, deepCopy, SetTextColor} from "./CallbackEventsOn.js";
+import {CallGoDo, deepCopy, SetTextColor, StrBase64Encode} from "./CallbackEventsOn.js";
 import {ClipboardSetText} from "../../wailsjs/runtime/runtime.js";
 
 window.Theme = reactive({
@@ -200,6 +200,22 @@ export default {
                   name: 'WinHttpR',
                   action: () => {
                     this.GenerateRequestCode("E", 'WinHttpR')
+                  },
+                  disabled: false,
+                  visible: true
+                },
+                {
+                  name: '网页_访问',
+                  action: () => {
+                    this.GenerateRequestCode("E", '网页_访问')
+                  },
+                  disabled: false,
+                  visible: true
+                },
+                {
+                  name: '网页_访问_对象',
+                  action: () => {
+                    this.GenerateRequestCode("E", '网页_访问_对象')
                   },
                   disabled: false,
                   visible: true
@@ -646,7 +662,8 @@ export default {
         }
         Columns[i] = Column
       }
-      CallGoDo("保存配置", {Type: "列数据", Data: Columns})
+      const ColumnsObjs = StrBase64Encode(JSON.stringify(Columns))
+      CallGoDo("保存配置", {Type: "列数据", Data: ColumnsObjs})
     },
     GenerateRequestCode(Lang, module) {
       const array = []
