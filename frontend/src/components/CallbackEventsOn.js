@@ -579,11 +579,17 @@ export async function EventsDo(arg) {
             try {
                 const Columns = JSON.parse(Args.Columns)
                 Object.keys(Columns).forEach((key) => {
+                    Columns[key].editable = false
+                    if (Columns[key]) {
+                        if (Columns[key].field === '注释') {
+                            Columns[key].editable = true
+                        }
+                    }
                     window.vm.List.columns[key] = Columns[key]
                 });
+
             } catch (e) {
             }
-
         }
             //111111111111111111111
             return

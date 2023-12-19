@@ -19,7 +19,7 @@
       <FindRange ref="FindRange" style="position: absolute;left: 90px;width: 400px"/>
     </div>
     <div style="justify-items: center;top:150px;position: absolute;left: 0px;width: 500px">
-      <span style="position: absolute;left: 25px;top:4px;background-color: #ff0000;color: #0a0a0a"
+      <span style="position: absolute;left: 25px;top:4px;background-color: #ffe100;color: #0a0a0a"
             ref="color">颜色标记：</span>
       <FindColor ref="FindColor" style="position: absolute;left: 90px;width: 199px"/>
       <el-checkbox-group v-model="checkList" style="position: absolute;left: 272px;width: 199px;top:-4px">
@@ -61,7 +61,7 @@ export default {
   components: {FindColor, FindRange, FindType, Autocomplete},
   data() {
     return {
-      checkList: ['取消之前的颜色标记'],
+      checkList: ['取消之前的颜色标记',"不区分大小写","删除空格后搜索"],
       per: 100,
       start: false,
       //显示搜索进度

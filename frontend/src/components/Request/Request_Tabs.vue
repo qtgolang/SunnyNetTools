@@ -32,7 +32,7 @@
       </div>
     </div>
     <div role="presentation" ref="BodyRect" class="ag-tabs-body ag-chart-tabbed-menu-body" style="">
-      <div style="width: 100%;height: 100%">
+      <div :style="{  width: '100%',  height: RawBodyRectHeight + 'px',  position: 'absolute'}">
         <div v-show="HTTPTabs[0].visible&&DisplayHTTPHeader" :style="GetBreakpointStateStyle">
           <JavaScriptEdit ref="Raw" :height="BodyRectHeight" :glyphMargin="false" :readOnly="readOnly"
                           :Text="RawStrings"
@@ -189,6 +189,7 @@ export default {
   methods: {
     BreakClick(mode) {
       const cmm = window.vm.List.agSelectedLine.data["断点模式"]
+      console.log(cmm, mode)
       if (cmm === 0) {
         window.vm.List.agSelectedLine.data["断点模式"] = 0
         return;
@@ -196,19 +197,26 @@ export default {
       if (cmm === 1) {
         this.saveData().then(res => {
           CallGoDo("断点点击", {NextBreak: mode, Theology: this.RequestTheology})
+
+
           this.Breakpoint = false
           this.GetBodyRect(this.$refs.BodyRect.offsetHeight, this.$refs.BodyRect.offsetWidth)
           window.vm.List.RefreshRenderedNodes()
           //window.vm.List.agGridApi.setRowData(window.vm.List.RowData);
+
+
         })
         return
       }
       window.vm.Tabs.Response.saveData().then(res => {
         CallGoDo("断点点击", {NextBreak: mode, Theology: this.RequestTheology})
+
         this.Breakpoint = false
         this.GetBodyRect(this.$refs.BodyRect.offsetHeight, this.$refs.BodyRect.offsetWidth)
         window.vm.List.RefreshRenderedNodes()
         //window.vm.List.agGridApi.setRowData(window.vm.List.RowData);
+
+
       })
     },
     SetHTTPPagesShow(name, value) {
@@ -390,6 +398,9 @@ export default {
         this.$refs.Args.SelectedLine(0)
         this.$refs.BodyArgs.SelectedLine(0)
         this.SelectHTTPFolder()
+
+        this.$refs.Raw.SetReadOnly(this.readOnly)
+        this.$refs.RawText.SetReadOnly(this.readOnly)
       });
 
     },
@@ -428,7 +439,7 @@ export default {
                   Data: data,
                   UTF8: this.BodyUTF8,
                 })
-                this.$refs.Raw.SetHasModify(false)
+                this.$refs.Raw.IsHasModify = false
                 return true
               }
               break
@@ -504,7 +515,7 @@ export default {
                   UTF8: this.BodyUTF8,
                   Data: StrBase64Encode(mCode)
                 })
-                this.$refs.RawText.SetHasModify(false)
+                this.$refs.RawText.IsHasModify = false
                 return true
               }
               break
@@ -649,7 +660,6 @@ export default {
       for (const entry of entries) {
         const {width, height} = entry.contentRect;
         this.GetBodyRect(height, width)
-        //console.log('Element size changed:', width, height);
       }
     });
     resizeObserver.observe(elementRef); // 开始监听元素尺寸变化

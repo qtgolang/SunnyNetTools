@@ -13,7 +13,7 @@
 <script lang="ts" setup>
 import {ref, watch} from 'vue'
 
-const value = ref('红色')
+const value = ref('黄色')
 const options = [
   {
     value: '黄色',

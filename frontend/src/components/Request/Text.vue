@@ -44,7 +44,8 @@ export default {
           validate: false, // 禁用语法错误提示
         },
         minimap: {enabled: false},
-        readOnly: false
+        fontSize: 13,
+        readOnly: true
       },
       Function: {
         Save: null,
@@ -182,6 +183,7 @@ export default {
       }
       this.Function.setValue = (newContent) => {
         editor.setValue(newContent);
+        editor.setScrollTop(0);
       }
       this.Function.formatCode = () => {
         editor?.getAction('editor.action.formatDocument').run()

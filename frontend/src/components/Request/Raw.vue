@@ -2,11 +2,14 @@
   <div
       ref="container"
       class="monaco-editor"
-      style="text-align: left;height: 100%"
+      style="text-align: left;height: 100%;"
+      :drak="getTheme"
   ></div>
 </template>
 <script>
 import * as monaco from 'monaco-editor'
+
+
 function IsRemoveMenu(value, zd) {
 
   let Menu = [
@@ -26,6 +29,12 @@ function IsRemoveMenu(value, zd) {
 export default {
   data() {
     return {
+      get theme() {
+        return window.Theme.IsDark
+      },
+      set theme(newValue) {
+        window.Theme.IsDark = newValue
+      },
       // 主要配置
       defaultOpts: {
         value: '', // 编辑器的值
@@ -44,7 +53,8 @@ export default {
           validate: false, // 禁用语法错误提示
         },
         minimap: {enabled: false},
-        readOnly: false
+        fontSize: 13,
+        readOnly: true
       },
       Function: {
         Save: null,
@@ -176,6 +186,7 @@ export default {
       }
       this.Function.setValue = (newContent) => {
         editor.setValue(newContent);
+        editor.setScrollTop(0);
       }
       this.Function.formatCode = () => {
         editor?.getAction('editor.action.formatDocument').run()
@@ -292,6 +303,7 @@ export default {
       // 监听内容变化事件
       editor.getModel().onDidChangeContent(() => {
         this.Function.SetNewValue(editor.getValue())
+        this.IsHasModify = true
       });
     },
     // 供父组件调用手动获取值
@@ -327,6 +339,23 @@ export default {
     },
     HasModify() {
       return this.IsHasModify
+    }
+  },
+  computed: {
+    getTheme() {
+      this.$nextTick(() => {
+        this.$nextTick(() => {
+          if (this.Function.GetCode) {
+            if (this.Function.SetNewValue) {
+              const code = this.Function.GetCode()
+              const IsHasModify = this.IsHasModify
+              this.Function.SetNewValue(code)
+              this.IsHasModify = IsHasModify
+            }
+          }
+        })
+      })
+      return this.theme
     }
   }
 }

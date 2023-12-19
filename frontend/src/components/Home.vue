@@ -556,9 +556,11 @@ export default {
       this.agSelectedArray = selectedRowNodes;
     },
     onRowClicked(params) {
-      params.node.setSelected(true);
+      if (this.colId === "注释") {
+        return
+      }
       let array = []
-      if (this.agSelectedLine !== null) {
+      if (this.agSelectedLine) {
         const obj = this.RowDataHashMap[this.agSelectedLine.data.Theology]
         if (obj) {
           if (obj.data.color) {
@@ -580,9 +582,7 @@ export default {
         }
         array.push(obj)
       }
-      if (this.colId === "注释") {
-        return
-      }
+
       this.$nextTick(() => {
         this.RefreshRenderedNodes()
         //this.agGridApi.refreshCells({rowNodes: array, force: true})
@@ -1088,10 +1088,10 @@ function getMenuItems(Items) {
 }
 
 .ag-theme-balham {
-  --ag-row-hover-color: #86b5c7;
+  --ag-row-hover-color: #024d6c;
 }
 
 .ag-theme-balham-dark {
-  --ag-row-hover-color: rgb(44, 100, 124);
+  --ag-row-hover-color: rgb(139, 207, 238);
 }
 </style>

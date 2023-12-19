@@ -46,6 +46,7 @@ export default {
           validate: false, // 禁用语法错误提示
         },
         minimap: {enabled: false},
+        fontSize: 13,
         readOnly: false
       },
       Function: {

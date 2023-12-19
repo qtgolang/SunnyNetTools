@@ -37,39 +37,41 @@
             style="right: 3px;position:absolute;cursor:pointer;top:5px" @click="SetMaximize(2)"></span>
     </div>
     <div ref="BodyRect" role="presentation" class="ag-tabs-body ag-chart-tabbed-menu-body">
-      <div v-show="HTTPTabs[0].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
-        <JavaScriptEdit ref="Raw" :height="BodyRectHeight" :glyphMargin="false" :readOnly="readOnly" Text=""
-                        Name="Response"/>
-      </div>
-      <div v-show="HTTPTabs[1].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
-        <List ref="Headers" :readOnly="readOnly"/>
-      </div>
-      <div v-show="HTTPTabs[2].visible||TCPTabs[0].visible" style="width: 100%;height: 100%">
-        <VueText ref="RawText" :height="BodyRectHeight" :glyphMargin="false" :readOnly="readOnly" Language="'html'"
-                 Name="Text"/>
-      </div>
-      <div v-show="HTTPTabs[3].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
-        <IMGView ref="IMG"></IMGView>
-      </div>
-      <div v-show="HTTPTabs[4].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
-        <div class="iframe-container">
-          <iframe ref="iframe" sandbox="allow-same-origin allow-forms allow-top-navigation"
-                  style="width: 100%; height: 100%" :srcdoc="GetHTML"></iframe>
+      <div :style="{width: '100%' ,height: BodyRectHeight,position: 'absolute'}">
+        <div v-show="HTTPTabs[0].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
+          <JavaScriptEdit ref="Raw" :height="BodyRectHeight" :glyphMargin="false" :readOnly="readOnly" Text=""
+                          Name="Response"/>
         </div>
+        <div v-show="HTTPTabs[1].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
+          <List ref="Headers" :readOnly="readOnly"/>
+        </div>
+        <div v-show="HTTPTabs[2].visible||TCPTabs[0].visible" style="width: 100%;height: 100%">
+          <VueText ref="RawText" :height="BodyRectHeight" :glyphMargin="false" :readOnly="readOnly" Language="'html'"
+                   Name="Text"/>
+        </div>
+        <div v-show="HTTPTabs[3].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
+          <IMGView ref="IMG"></IMGView>
+        </div>
+        <div v-show="HTTPTabs[4].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
+          <div class="iframe-container">
+            <iframe ref="iframe" sandbox="allow-same-origin allow-forms allow-top-navigation"
+                    style="width: 100%; height: 100%" :srcdoc="GetHTML"></iframe>
+          </div>
+        </div>
+        <div v-show="HTTPTabs[5].visible||TCPTabs[1].visible" style="width: 100%;height: 100%">
+          <HexView ref="HexView" :Size="HexViewSize" :readOnly="readOnly" :raw="HexViewRaw"/>
+        </div>
+        <div v-show="HTTPTabs[6].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
+          <Cookies ref="Cookies" :readOnly="readOnly"/>
+        </div>
+        <div v-show="HTTPTabs[7].visible||TCPTabs[2].visible" style="width: 100%;height: 100%">
+          <JSon ref="Json" :height="BodyRectHeight" :width="BodyRectWidth" :readOnly="readOnly"/>
+        </div>
+        <div v-show="TCPTabs[3].visible&&DisplayTCPResponse" style="width: 100%;height: 100%">
+          <Active ref="Active" :Height="BodyRectHeight"/>
+        </div>
+        <div v-if="updateSocketContent"/>
       </div>
-      <div v-show="HTTPTabs[5].visible||TCPTabs[1].visible" style="width: 100%;height: 100%">
-        <HexView ref="HexView" :Size="HexViewSize" :readOnly="readOnly" :raw="HexViewRaw"/>
-      </div>
-      <div v-show="HTTPTabs[6].visible&&DisplayTCPResponse===false" style="width: 100%;height: 100%">
-        <Cookies ref="Cookies" :readOnly="readOnly"/>
-      </div>
-      <div v-show="HTTPTabs[7].visible||TCPTabs[2].visible" style="width: 100%;height: 100%">
-        <JSon ref="Json" :height="BodyRectHeight" :width="BodyRectWidth" :readOnly="readOnly"/>
-      </div>
-      <div v-show="TCPTabs[3].visible&&DisplayTCPResponse" style="width: 100%;height: 100%">
-        <Active ref="Active" :Height="BodyRectHeight"/>
-      </div>
-      <div v-if="updateSocketContent"/>
     </div>
   </div>
 </template>
@@ -239,7 +241,7 @@ export default {
                   Data: data,
                   UTF8: this.BodyUTF8,
                 })
-                this.$refs.Raw.SetHasModify(false)
+                this.$refs.Raw.IsHasModify = false
                 return true
               }
               break
@@ -266,7 +268,7 @@ export default {
                   UTF8: this.BodyUTF8,
                   Data: mCode
                 })
-                this.$refs.RawText.SetHasModify(false)
+                this.$refs.RawText.IsHasModify = false
                 return true
               }
               break
@@ -402,6 +404,9 @@ export default {
         this.$refs.Headers.SelectedLine(0)
         this.$refs.Cookies.SelectedLine(0)
         this.SelectHTTPFolder()
+
+        this.$refs.Raw.SetReadOnly(this.readOnly)
+        this.$refs.RawText.SetReadOnly(this.readOnly)
       });
     },
     parsingCookie(Cookie) {

@@ -301,6 +301,7 @@ func event(command string, args *JSON.SyJson) any {
 		return obj.Find()
 	//主界面的关闭按钮点击
 	case "CloseWindow":
+		runtime.Hide(app.ctx)
 		code, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(args.GetData("Filter"), "\\\\", "\\"))
 		_TmpLock.Lock()
 		GlobalConfig.Filter = string(code)
