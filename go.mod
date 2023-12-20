@@ -6,7 +6,7 @@ require (
 	github.com/Trisia/gosysproxy v1.0.0
 	github.com/andybalholm/brotli v1.0.5
 	github.com/mitchellh/go-ps v1.0.0
-	github.com/qtgolang/SunnyNet v0.0.0-20231210213144-afb088bc191d
+	github.com/qtgolang/SunnyNet v0.0.0-20231220142835-a510437c8c64
 	github.com/traefik/yaegi v0.15.1
 	github.com/wailsapp/wails/v2 v2.6.0
 	golang.org/x/text v0.13.0

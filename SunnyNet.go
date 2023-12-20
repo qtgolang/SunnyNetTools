@@ -414,6 +414,28 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				Ico:       "上行",
 				Break:     IsBreak,
 			}
+			if len(h.Response.Body) > 0 || len(h.Response.Header) > 0 {
+				ResponseType := "空白"
+				if h.Response.Header != nil {
+					_a := h.Response.Header["Content-Type"]
+					if len(_a) > 0 {
+						ResponseType = _a[0]
+					} else {
+						_a = h.Response.Header["content-type"]
+						if len(_a) > 0 {
+							ResponseType = _a[0]
+						}
+					}
+					if ResponseType != "" {
+						array := strings.Split(ResponseType+";", ";")
+						if len(array) > 0 {
+							ResponseType = array[0]
+						}
+					}
+				}
+				_tmp.Ico = ResponseType
+				_tmp.Break = 0
+			}
 			AddInsertList(_tmp)
 			if IsBreak == 1 {
 				h.Wait.Add(1)
@@ -486,7 +508,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 			}
 			delete(Conn.Response.Header, "Transfer-Encoding")
 		}
-		RunHTTPResponseScriptCode(Conn)
+		Break := RunHTTPResponseScriptCode(Conn)
 		Insert.Lock()
 		isUpdateRequestInfo := currentlySelected == Conn.Theology
 		Insert.Unlock()
@@ -495,6 +517,9 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 			return
 		}
 		IsBreak := uint8(0)
+		if Break {
+			h.Break = 2
+		}
 		h.RecTime = time.Now().Format("15:04:05.000")
 		if breakpoint == 2 || h.Break == 2 {
 			IsBreak = 2

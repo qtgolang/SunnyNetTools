@@ -21,8 +21,8 @@ type HTTP struct {
 	PID      int                        //由哪个进程发送的数据,若是为0表示通过代理连接
 	URL      string                     //[仅Type=1 可修改]请求的URL
 	Method   string                     //[仅Type=1 可修改]
-	Header   http.Header                //请求或响应的协议头
-	Body     []byte                     //请求或响应的Body
+	Header   http.Header                //请求的协议头
+	Body     []byte                     //请求的Body
 	SetAgent func(ProxyUrl string) bool //设置代理,[仅Type=1时有效],格式 socket5://admin:123456@127.0.0.1:8888 或 http://admin:123456@127.0.0.1:8888
 	Response struct {                   //[如果Type=1 操作此对象数据,将不发出请求]
 		Header    http.Header //响应的协议头
@@ -225,9 +225,12 @@ HTTP请求快速响应
         a:字节数组([]byte)
         b:字节数组([]byte)
 
-    BytesAdd(a,b)     返回值:字节数组([]byte)     a + b 返回新的字节数组
+    BytesAdd(a,b)       返回值:字节数组([]byte)     a + b 返回新的字节数组
         a:字节数组([]byte)
         b:字节数组([]byte)
+
+    ReadFile(filePath)     返回值:字节数组([]byte) 读取本地文件
+        filePath:字符串(string)   本地文件路径
 ----------------------------------------------------------------------------------------------------------------
 */
 

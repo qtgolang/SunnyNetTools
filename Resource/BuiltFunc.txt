@@ -1138,7 +1138,10 @@ func BytesAdd(a, b []byte) []byte {
 	c.Write(b)
 	return c.Bytes()
 }
-
+func ReadFile(filePath string) []byte {
+	a, _ := os.ReadFile(filePath)
+	return a
+}
 
 
 

@@ -402,7 +402,15 @@ func RunHTTPRequestScriptCode(Conn *SunnyNet.HttpConn) bool {
 		HashMap.SetRequest(Conn.Theology, h)
 		return true
 	}
-	_URL, _Method, _Header, _Body, _Header2, _Body2, _StateCode, Display, _Break := _Call(Conn.Theology, Conn.Type, Conn.PID, h.URL, h.Method, h.Header, h.Body, Conn.SetAgent, make(http.Header), h.Response.Body, h.Response.StateCode, h.Display)
+	if Conn.Response != nil {
+		Body, _ := io.ReadAll(Conn.Response.Body)
+		_ = Conn.Response.Body.Close()
+		Conn.Response.Body = io.NopCloser(bytes.NewBuffer(Body))
+		h.Response.Body = Body
+		h.Response.StateCode = Conn.Response.StatusCode
+		h.Response.Header = Conn.Response.Header
+	}
+	_URL, _Method, _Header, _Body, _Header2, _Body2, _StateCode, Display, _Break := _Call(Conn.Theology, Conn.Type, Conn.PID, h.URL, h.Method, h.Header, h.Body, Conn.SetAgent, h.Response.Header, h.Response.Body, h.Response.StateCode, h.Display)
 	h.Response.StateCode = _StateCode
 	if len(_Header2) > 0 {
 		Conn.Response = new(http.Response)

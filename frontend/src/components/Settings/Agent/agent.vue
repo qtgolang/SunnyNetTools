@@ -4,8 +4,8 @@
               class="input-with-select" :disabled="inputDisabled">
       <template #prepend>
         <el-select v-model="select" placeholder="Select" style="width: 115px">
-          <el-option label="Socket5://" value="1"/>
-          <el-option label="HTTP://" value="2"/>
+          <el-option label="Socket5://" value="Socket5://"/>
+          <el-option label="HTTP://" value="HTTP://"/>
         </el-select>
       </template>
       <template #append>
