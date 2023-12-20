@@ -61,6 +61,7 @@ type ListInfo struct {
 	Theology  int    `json:"Theology"`  //唯一ID
 	State     string `json:"状态"`        //状态文本
 	URL       string `json:"请求地址"`      //请求地址
+	HOST      string `json:"HOST"`      //请求地址
 	ClientIP  string `json:"来源地址"`      //来源地址
 	PID       string `json:"进程"`        //进程信息
 	Method    string `json:"方式"`        //方式
@@ -333,6 +334,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				AddInsertList(&ListInfo{
 					MessageId: -1,
 					URL:       Conn.Request.URL.String(),
+					HOST:      Conn.Request.URL.Host,
 					ClientIP:  Conn.ClientIP,
 					PID:       h.PID,
 					Method:    Conn.Request.Method,
@@ -380,6 +382,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				_tmp := &ListInfo{
 					MessageId: -1,
 					URL:       Conn.Request.URL.String(),
+					HOST:      Conn.Request.URL.Host,
 					ClientIP:  Conn.ClientIP,
 					PID:       CommAnd.GetPidName(Conn.PID),
 					Method:    Conn.Request.Method,
@@ -405,6 +408,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 			_tmp := &ListInfo{
 				MessageId: -1,
 				URL:       Conn.Request.URL.String(),
+				HOST:      Conn.Request.URL.Host,
 				ClientIP:  Conn.ClientIP,
 				PID:       CommAnd.GetPidName(Conn.PID),
 				Method:    Conn.Request.Method,
@@ -443,6 +447,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				_tmp = &ListInfo{
 					MessageId: -1,
 					URL:       Conn.Request.URL.String(),
+					HOST:      Conn.Request.URL.Host,
 					ClientIP:  Conn.ClientIP,
 					PID:       CommAnd.GetPidName(Conn.PID),
 					Method:    Conn.Request.Method,
@@ -558,6 +563,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 		_tmp := &ListInfo{
 			MessageId: -1,
 			URL:       Conn.Request.URL.String(),
+			HOST:      Conn.Request.URL.Host,
 			ClientIP:  Conn.ClientIP,
 			PID:       CommAnd.GetPidName(Conn.PID),
 			Method:    Conn.Request.Method,
@@ -578,6 +584,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 			_tmp = &ListInfo{
 				MessageId: -1,
 				URL:       Conn.Request.URL.String(),
+				HOST:      Conn.Request.URL.Host,
 				ClientIP:  Conn.ClientIP,
 				PID:       CommAnd.GetPidName(Conn.PID),
 				Method:    Conn.Request.Method,
@@ -620,6 +627,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 		_tmp := &ListInfo{
 			MessageId: -1,
 			URL:       Conn.Request.URL.String(),
+			HOST:      Conn.Request.URL.Host,
 			ClientIP:  Conn.ClientIP,
 			PID:       CommAnd.GetPidName(Conn.PID),
 			Method:    Conn.Request.Method,
@@ -658,6 +666,7 @@ func WSCallback(Conn *SunnyNet.WsConn) {
 		_tmp := &ListInfo{
 			MessageId: -1,
 			URL:       Conn.Request.URL.String(),
+			HOST:      Conn.Request.URL.Host,
 			ClientIP:  Conn.ClientIP,
 			PID:       CommAnd.GetPidName(Conn.Pid),
 			Method:    "WebSocket",
@@ -677,6 +686,7 @@ func WSCallback(Conn *SunnyNet.WsConn) {
 		_tmp := &ListInfo{
 			MessageId: -1,
 			URL:       Conn.Request.URL.String(),
+			HOST:      Conn.Request.URL.Host,
 			ClientIP:  Conn.ClientIP,
 			PID:       CommAnd.GetPidName(Conn.Pid),
 			Method:    "WebSocket",
@@ -822,6 +832,7 @@ func TcpCallback(Conn *SunnyNet.TcpConn) {
 		_tmp := &ListInfo{
 			MessageId: -1,
 			URL:       h.URL,
+			HOST:      Conn.RemoteAddr,
 			ClientIP:  Conn.LocalAddr,
 			PID:       CommAnd.GetPidName(Conn.Pid),
 			Method:    h.Method,
@@ -981,6 +992,7 @@ func UdpCallback(Conn *SunnyNet.UDPConn) {
 		_tmp := &ListInfo{
 			MessageId: -1,
 			URL:       h.URL,
+			HOST:      Conn.RemoteAddress,
 			ClientIP:  Conn.LocalAddress,
 			PID:       CommAnd.GetPidName(Conn.Pid),
 			Method:    h.Method,

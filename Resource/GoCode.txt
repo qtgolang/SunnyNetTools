@@ -12,24 +12,26 @@ func init() {
 	Log(GoBase64Encode(a))
 }
 
+
 // 请勿修改此结构体
 type HTTP struct {
-	uniqueId int                        //请求唯一ID
-	Break    bool                       //是否需要设置断点调试,设置后可以在软件界面修改数据
-	Display  bool                       //是否需要显示到列表中 [仅Type=1有效]
-	Type     int                        //1=发起请求,2=请求完成,3=请求失败 [不可修改]
-	PID      int                        //由哪个进程发送的数据,若是为0表示通过代理连接
-	URL      string                     //[仅Type=1 可修改]请求的URL
-	Method   string                     //[仅Type=1 可修改]
-	Header   http.Header                //请求的协议头
-	Body     []byte                     //请求的Body
-	SetAgent func(ProxyUrl string) bool //设置代理,[仅Type=1时有效],格式 socket5://admin:123456@127.0.0.1:8888 或 http://admin:123456@127.0.0.1:8888
+	uniqueId int                        `json:"uniqueId"` //请求唯一ID
+	Break    bool                       `json:"Break"`    //是否需要设置断点调试,设置后可以在软件界面修改数据
+	Display  bool                       `json:"Display"`  //是否需要显示到列表中 [仅Type=1有效]
+	Type     int                        `json:"Type"`     //1=发起请求,2=请求完成,3=请求失败 [不可修改]
+	PID      int                        `json:"PID"`      //由哪个进程发送的数据,若是为0表示通过代理连接
+	URL      string                     `json:"URL"`      //[仅Type=1 可修改]请求的URL
+	Method   string                     `json:"Method"`   //[仅Type=1 可修改]
+	Header   http.Header                `json:"Header"`   //请求的协议头
+	Body     []byte                     `json:"Body"`     //请求的Body
+	SetAgent func(ProxyUrl string) bool `json:"-"`        //设置代理,[仅Type=1时有效],格式 socket5://admin:123456@127.0.0.1:8888 或 http://admin:123456@127.0.0.1:8888
 	Response struct {                   //[如果Type=1 操作此对象数据,将不发出请求]
-		Header    http.Header //响应的协议头
-		Body      []byte      //响应的数据
-		StateCode int         //响应的状态码
-	}
+		Header    http.Header `json:"Header"`    //响应的协议头
+		Body      []byte      `json:"Body"`      //响应的数据
+		StateCode int         `json:"StateCode"` //响应的状态码
+	} `json:"Response"`
 }
+
 
 // 脚本回调事件 -> HTTP发起请求、HTTP响应请求、HTTP请求错误
 func HttpRequestCallbackFunction(Sunny *HTTP) {
@@ -159,14 +161,14 @@ func udpCallbackFunction(Sunny *UdpSocket) {
 
 ----------------------------------------------------------------------------------------------------------------
 发起HTTP请求
-            GoHTTPRequest(method, url , header)     发起HTTP请求,共有三个返回值:
+            GoHTTPRequest(method, url , body ,header)     发起HTTP请求,共有三个返回值:
                                                     返回值1:响应的Body    类型:([]byte)
                                                     返回值2:响应的Header  类型:(http.Header)
                                                     返回值3:错误信息      类型:(error)
                 method: 请求方式 例如:"POST","GET" 等               类型:字符串(string)
                 url:    请求地址 例如:"https://baidu.com/123456"    类型:字符串(string)
+                body:   提交数据 类型:[]byte 或 字符串(string)
                 header: 请求地址 例如:"https://baidu.com/123456"    类型:http.Header    (这个参数可忽略不传)
-
 
 ----------------------------------------------------------------------------------------------------------------
 AES、DES 加密解密

@@ -15,6 +15,7 @@ import AgHeaderGroup from './Header.vue';
 import AgFooterGroup from './Footer.vue';
 import {CallGoDo, deepCopy, SetTextColor, StrBase64Encode} from "./CallbackEventsOn.js";
 import {ClipboardSetText} from "../../wailsjs/runtime/runtime.js";
+import {ElMessage} from "element-plus";
 
 window.Theme = reactive({
   IsDark: true,
@@ -129,6 +130,10 @@ export default {
           maxWidth: 80, cellStyle: {'text-align': 'left'}
         },
         {
+          field: "HOST", width: 120, minWidth: 120, tooltipField: 'HOST', hide: true,
+          maxWidth: 500, cellStyle: {'text-align': 'left'}
+        },
+        {
           field: "请求地址", width: 200, minWidth: 200, tooltipField: '请求地址',
           maxWidth: 2000, cellStyle: {'text-align': 'left'}
         },
@@ -172,6 +177,29 @@ export default {
       agTools: null,
       FindShow: false,
       MenuItems: [
+        {
+          name: '复制',
+          subMenu: [
+            {
+              name: '请求地址',
+              action: () => {
+                this.CopyReqHost("请求地址")
+              },
+              disabled: false,
+              visible: true
+            },
+            {
+              name: 'HOST',
+              action: () => {
+                this.CopyReqHost("HOST")
+              },
+              disabled: false,
+              visible: true
+            },
+          ],
+          disabled: false,
+          visible: true
+        },
         {
           name: '生成请求代码',
           subMenu: [
@@ -431,11 +459,35 @@ export default {
     };
   },
   methods: {
+    CopyReqHost(mode) {
+      let obj = ""
+      for (let i = 0; i < this.agSelectedArray.length; i++) {
+        const uri = "" + this.agSelectedArray[i].data[mode]
+        if (obj === "") {
+          obj = uri
+        } else {
+          obj += "\r\n" + uri
+        }
+      }
+      if (obj !== "") {
+        ClipboardSetText(obj)
+        ElMessage({
+          message: "复制成功！",
+          type: 'success',
+        })
+      } else {
+        ElMessage({
+          message: "您还没有选择请求",
+          type: 'error',
+        })
+      }
+
+    },
     sendToClipboard(params) {
       ClipboardSetText(params.data)
     },
     SetEmptySearchMenuVisible(value) {
-      this.MenuItems[1].subMenu[8].visible = value
+      this.MenuItems[2].subMenu[8].visible = value
     },
     CancelSearch() {
       this.SetEmptySearchMenuVisible(false)
@@ -531,10 +583,18 @@ export default {
         })
       } else if (event.ctrlKey && (event.key === "c" || event.key === "C")) {
         if (this.IsListDomRange) {
-          this.agGridApi.copySelectedRangeToClipboard();
+
+          if (this.agSelectedArray.length > 0) {
+            this.agGridApi.copySelectedRangeToClipboard();
+            ElMessage({
+              message: "复制成功！",
+              type: 'success',
+            })
+          }
         }
       }
-    },
+    }
+    ,
     onRangeSelectionChanged(event) {
       const rangeSelections = event.api.getCellRanges();
       const selectedRowNodes = [];
@@ -554,7 +614,8 @@ export default {
         });
       });
       this.agSelectedArray = selectedRowNodes;
-    },
+    }
+    ,
     onRowClicked(params) {
       if (this.colId === "注释") {
         return
@@ -587,37 +648,43 @@ export default {
         this.RefreshRenderedNodes()
         //this.agGridApi.refreshCells({rowNodes: array, force: true})
       })
-    },
+    }
+    ,
     CellValueChanged(event) {
       const newValue = event.newValue;
       const Theology = event.data['Theology'];
       CallGoDo("更新注释", {Theology: Theology, Data: newValue})
-    },
+    }
+    ,
     onCellFocused(event) {
       this.colId = event.column.colId
-    },
+    }
+    ,
     onContextMenuItems(params) {
       if (this.agSelectedArray.length < 1) {
         this.MenuItems[0].visible = false
         this.MenuItems[1].visible = false
-        this.MenuItems[3].visible = false
-        this.MenuItems[5].visible = false
+        this.MenuItems[2].visible = false
+        this.MenuItems[4].visible = false
         this.MenuItems[6].visible = false
-        this.MenuItems[8].visible = true
-        this.MenuItems[9].visible = false
+        this.MenuItems[7].visible = false
+        this.MenuItems[9].visible = true
+        this.MenuItems[10].visible = false
         return getMenuItems(this.MenuItems)
       } else {
         this.MenuItems[0].visible = true
         this.MenuItems[1].visible = true
-        this.MenuItems[3].visible = true
-        this.MenuItems[5].visible = true
+        this.MenuItems[2].visible = true
+        this.MenuItems[4].visible = true
         this.MenuItems[6].visible = true
-        this.MenuItems[8].visible = true
+        this.MenuItems[7].visible = true
+        this.MenuItems[9].visible = true
       }
       this.onRowClicked(params)
       this.onContextMenu();
       return getMenuItems(this.MenuItems)
-    },
+    }
+    ,
     onContextMenu() {
       let ok = false
       let showCF = true
@@ -639,12 +706,14 @@ export default {
           }
         }
       }
+
       if (this.MenuItems.length > 8) {
-        this.MenuItems[0].visible = showCF
-        this.MenuItems[6].visible = showCF
-        this.MenuItems[9].visible = ok
+        this.MenuItems[1].visible = showCF
+        this.MenuItems[7].visible = showCF
+        this.MenuItems[10].visible = ok
       }
-    },
+    }
+    ,
     onColumnChange(event) {
       const GridColumns = this.$refs.agGrid.gridOptions.columnApi.getAllGridColumns()
       let Columns = []
@@ -664,14 +733,16 @@ export default {
       }
       const ColumnsObjs = StrBase64Encode(JSON.stringify(Columns))
       CallGoDo("保存配置", {Type: "列数据", Data: ColumnsObjs})
-    },
+    }
+    ,
     GenerateRequestCode(Lang, module) {
       const array = []
       for (let i = 0; i < this.agSelectedArray.length; i++) {
         array.push(this.agSelectedArray[i].data['Theology'])
       }
       CallGoDo("创建请求代码", {Data: array, Lang: Lang, Module: module})
-    },
+    }
+    ,
     NewColumnsLoaded(params) {
       this.onRangeSelectionChanged(params)
       if (this.ListFollowShow) {
@@ -681,7 +752,8 @@ export default {
           this.agGridApi.ensureIndexVisible(rowCount)
         }
       }
-    },
+    }
+    ,
     RefreshRenderedNodes() {
       const visibleRowNodes = this.agGridApi.getRenderedNodes();
       let array = []
@@ -692,7 +764,8 @@ export default {
         //this.agGridApi.refreshCells({rowNodes: array, force: true})
         this.agGridApi.redrawRows({rowNodes: array});
       })
-    },
+    }
+    ,
     onGetRowStyle(params) {
       let res = {
         fontFamily: "微软雅黑"
@@ -778,7 +851,8 @@ export default {
       }
       CallGoDo("标记颜色", {Data: array, empty: false})
       this.RefreshRenderedNodes()
-    },
+    }
+    ,
     delete() {
       const array = []
       const array2 = []
@@ -791,7 +865,8 @@ export default {
         this.agSelectedArray = []
         this.agSelectedLine = null
       })
-    },
+    }
+    ,
     CloseSession() {
       const array = []
       for (let i = 0; i < this.agSelectedArray.length; i++) {
@@ -810,7 +885,8 @@ export default {
         }
         window.vm.List.agGridApi.applyTransaction({update: ay});
       })
-    },
+    }
+    ,
     resend(mode) {
       //mode=3 普通重新发送
       //mode=1 重新发送并且拦截上行
@@ -820,7 +896,8 @@ export default {
         array.push(this.agSelectedArray[i].data['Theology'])
       }
       CallGoDo("重发请求", {Data: array, Mode: mode})
-    },
+    }
+    ,
   }
   ,
   computed: {
@@ -831,22 +908,22 @@ export default {
         {
           if (this.darkTheme) {
             if (this.ListFollowShow) {
-              this.MenuItems[8].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\\n' +
+              this.MenuItems[9].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\\n' +
               '    <polyline points="20 6 9 17 4 12"/>' +
               '</svg>`
             } else {
-              this.MenuItems[8].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              this.MenuItems[9].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="18" y1="6" x2="6" y2="18"/>
     <line x1="6" y1="6" x2="18" y2="18"/>
 </svg>`
             }
           } else {
             if (this.ListFollowShow) {
-              this.MenuItems[8].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\\n' +
+              this.MenuItems[9].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\\n' +
               '    <polyline points="20 6 9 17 4 12"/>' +
               '</svg>`
             } else {
-              this.MenuItems[8].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              this.MenuItems[9].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="18" y1="6" x2="6" y2="18"/>
     <line x1="6" y1="6" x2="18" y2="18"/>
 </svg>`

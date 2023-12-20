@@ -40,7 +40,7 @@
 
           <el-menu-item index="清除全部数据" :disabled="Stop">
             <div style="display: flex; align-items: center;">
-              <div  style="cursor: pointer; display: flex; align-items: center;position: relative;top:0px">
+              <div style="cursor: pointer; display: flex; align-items: center;position: relative;top:0px">
 
                 <el-tooltip class="item" effect="dark"
                             content="清空所有记录"
@@ -84,7 +84,7 @@
           </el-menu-item>
           <el-menu-item v-if="IsWindows" index="进程驱动">
             <div style="display: flex; align-items: center;">
-              <div  style="cursor: pointer; display: flex; align-items: center;position: relative;top:1px">
+              <div style="cursor: pointer; display: flex; align-items: center;position: relative;top:1px">
                 <el-tooltip class="item" effect="dark"
                             content="进程驱动"
                             placement="top">
@@ -98,7 +98,7 @@
           </el-menu-item>
           <el-menu-item index="脚本编辑">
             <div style="display: flex; align-items: center;">
-              <div  style="cursor: pointer; display: flex; align-items: center;position: relative;top:1px">
+              <div style="cursor: pointer; display: flex; align-items: center;position: relative;top:1px">
                 <el-tooltip class="item" effect="dark"
                             content="脚本编辑"
                             placement="top">
@@ -112,7 +112,7 @@
           </el-menu-item>
           <el-menu-item index="自动滚动">
             <div style="display: flex; align-items: center;">
-              <div   style="cursor: pointer; display: flex; align-items: center;position: relative;top:1px">
+              <div style="cursor: pointer; display: flex; align-items: center;position: relative;top:1px">
                 <el-icon v-show="AutoRollShow===false">
                   <CircleCloseFilled/>
                 </el-icon>
@@ -399,7 +399,6 @@ export default {
         this.rollShow()
         return
       }
-
 
 
       console.log(key, path, this.activeIndex, "ok")
