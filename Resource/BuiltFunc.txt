@@ -1143,6 +1143,17 @@ func ReadFile(filePath string) []byte {
 	a, _ := os.ReadFile(filePath)
 	return a
 }
-
+func WriteFile(filePath string, data any) bool {
+	_data := make([]byte, 0)
+	switch v := data.(type) {
+	case string:
+		_data = []byte(v)
+		break
+	case []byte:
+		_data = v
+		break
+	}
+	return os.WriteFile(filePath, _data, 777) == nil
+}
 
 

@@ -36,7 +36,9 @@ func ReplaceRulesEvent(command string, args *JSON.SyJson) any {
 			_source := args.GetData("Data[" + strconv.Itoa(i) + "].源内容")
 			_target := args.GetData("Data[" + strconv.Itoa(i) + "].替换内容")
 			_source = strings.ReplaceAll(_source, "\\\\", "\\")
+			_source = strings.ReplaceAll(_source, "\\\"", "\"")
 			_target = strings.ReplaceAll(_target, "\\\\", "\\")
+			_target = strings.ReplaceAll(_target, "\\\"", "\"")
 			if _source == "" {
 				failHash = append(failHash, _Hash)
 				continue

@@ -17,7 +17,8 @@ window.vm = {
   Find: null,
   Settings: null,
   OpenSourceProtocol: null,
-  Doc: null
+  Doc: null,
+  IEProxy: null,
 }
 window.VsCodeEdit = {JavaScriptEdit: false}
 let Interval = 0;

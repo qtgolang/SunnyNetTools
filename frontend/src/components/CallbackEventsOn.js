@@ -574,6 +574,21 @@ export async function EventsDo(arg) {
             } catch (e) {
             }
         }
+            //恢复快捷键
+        {
+            try {
+                const KeysStrings = JSON.parse(Args.KeysStrings)
+                Object.keys(KeysStrings).forEach((key) => {
+                    window.KeysStrings[key].ctrlKey = KeysStrings[key].ctrlKey
+                    window.KeysStrings[key].altKey = KeysStrings[key].altKey
+                    window.KeysStrings[key].shiftKey = KeysStrings[key].shiftKey
+                    window.KeysStrings[key].key = KeysStrings[key].key
+                    window.KeysStrings[key].value = KeysStrings[key].value
+                });
+                window.vm.List.agGridApi.onFilterChanged();
+            } catch (e) {
+            }
+        }
             //恢复列数据
         {
             try {
@@ -590,6 +605,7 @@ export async function EventsDo(arg) {
 
             } catch (e) {
             }
+
         }
             //111111111111111111111
             return

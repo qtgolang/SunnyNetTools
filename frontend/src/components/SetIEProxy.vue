@@ -17,6 +17,9 @@ export default {
     }
   }, methods: {
     Click() {
+      if (this.isSettings) {
+        return
+      }
       this.state = !this.state
       this.isSettings = true
       CallGoDo("设置IE代理", {Set: this.state}).then(res => {
@@ -31,6 +34,8 @@ export default {
         }
       })
     }
+  }, mounted() {
+    window.vm.IEProxy = this
   }
 }
 </script>

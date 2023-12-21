@@ -417,7 +417,10 @@ export default {
         for (const colId in filterModel) {
           objs[colId] = filterModel[colId]
         }
-        CallGoDo("CloseWindow", {Filter: StrBase64Encode(JSON.stringify(objs))})
+        CallGoDo("CloseWindow", {
+          Filter: StrBase64Encode(JSON.stringify(objs)),
+          KeysStrings: StrBase64Encode(JSON.stringify(window.KeysStrings))
+        })
       }
 
     },

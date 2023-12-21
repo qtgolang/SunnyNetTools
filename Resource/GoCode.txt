@@ -7,11 +7,6 @@ import (
 )
 
 // 脚本最下方定义了一些常用函数
-func init() {
-    a :=GoDESECBEncode([]byte("123456"), "1234PKCS56", []byte("123456"))
-	Log(GoBase64Encode(a))
-}
-
 
 // 请勿修改此结构体
 type HTTP struct {
@@ -233,6 +228,10 @@ HTTP请求快速响应
 
     ReadFile(filePath)     返回值:字节数组([]byte) 读取本地文件
         filePath:字符串(string)   本地文件路径
+
+    WriteFile(filePath,data)     返回值:逻辑型(bool) 写到本地文件 成功返回true
+        filePath:字符串(string)   本地文件路径
+        data:    要写入的数据,可以是字节数组([]byte) 或 字符串(string)
 ----------------------------------------------------------------------------------------------------------------
 */
 

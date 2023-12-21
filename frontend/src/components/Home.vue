@@ -572,7 +572,46 @@ export default {
     }
     ,
     handleKeyDown(event) {
-      if (event.ctrlKey && (event.key === "f" || event.key === "F")) {
+      event.d
+      const mKey = event.key.toUpperCase()
+      const FindObjs = window.KeysStrings["搜索/查找"]
+      const copyObjs = window.KeysStrings["复制"]
+      const releaseAllObjs = window.KeysStrings["全部放行"]
+      const releaseObjs = window.KeysStrings["放行当前请求"]
+      const proxyObjs = window.KeysStrings["设置/取消IE代理"]
+      const ClearAllObjs = window.KeysStrings["清空全部记录"]
+      if (event.ctrlKey === ClearAllObjs.ctrlKey && event.altKey === ClearAllObjs.altKey && event.shiftKey === ClearAllObjs.shiftKey && mKey === ClearAllObjs.key) {
+        if (ClearAllObjs.value === "") {
+          return;
+        }
+        window.vm.Header.clickRemoveAll(1)
+        return
+      }
+      if (event.ctrlKey === proxyObjs.ctrlKey && event.altKey === proxyObjs.altKey && event.shiftKey === proxyObjs.shiftKey && mKey === proxyObjs.key) {
+        if (proxyObjs.value === "") {
+          return;
+        }
+        window.vm.IEProxy.Click()
+        return
+      }
+      if (event.ctrlKey === releaseObjs.ctrlKey && event.altKey === releaseObjs.altKey && event.shiftKey === releaseObjs.shiftKey && mKey === releaseObjs.key) {
+        if (releaseObjs.value === "") {
+          return;
+        }
+        window.vm.Tabs.ToolPanel.ReleaseBreak()
+        return
+      }
+      if (event.ctrlKey === releaseAllObjs.ctrlKey && event.altKey === releaseAllObjs.altKey && event.shiftKey === releaseAllObjs.shiftKey && mKey === releaseAllObjs.key) {
+        if (releaseAllObjs.value === "") {
+          return;
+        }
+        window.vm.Header.ReleaseAll()
+        return
+      }
+      if (event.ctrlKey === FindObjs.ctrlKey && event.altKey === FindObjs.altKey && event.shiftKey === FindObjs.shiftKey && mKey === FindObjs.key) {
+        if (FindObjs.value === "") {
+          return;
+        }
         window.UI.FindWindow = false
         this.$nextTick(() => {
           window.UI.FindWindow = true
@@ -581,7 +620,12 @@ export default {
             window.vm.Find.SetFocus()
           })
         })
-      } else if (event.ctrlKey && (event.key === "c" || event.key === "C")) {
+        return
+      }
+      if (event.ctrlKey === copyObjs.ctrlKey && event.altKey === copyObjs.altKey && event.shiftKey === copyObjs.shiftKey && mKey === copyObjs.key) {
+        if (copyObjs.value === "") {
+          return;
+        }
         if (this.IsListDomRange) {
 
           if (this.agSelectedArray.length > 0) {

@@ -32,6 +32,10 @@
     <div style="text-align: left;position: relative;left: 95px;">
       <List ref="UserInfo" v-show="Option.authentication" :style="getParentElementWidth"/>
     </div>
+    <div style="text-align: left;position: relative;left: 95px;">
+      <Shortcutkeys ref="Keys" :style="getParentElementWidth2"></Shortcutkeys>
+    </div>
+
   </div>
 </template>
 <script>
@@ -39,15 +43,19 @@ import {Check} from '@element-plus/icons-vue'
 import List from "./List.vue";
 import {CallGoDo, SunnyErrorReplaceAll} from "../../CallbackEventsOn.js";
 import {ElMessage, ElMessageBox} from "element-plus";
+import Shortcutkeys from "./Shortcutkeys.vue";
 
 export default {
-  components: {List},
+  components: {Shortcutkeys, List},
   computed: {
     Check() {
       return Check
     },
     getParentElementWidth() {
       return "width: " + (window.Size.Settings.Width - (97 * 2)) + "px;height: " + (window.Size.Settings.Height - 220) + "px"
+    },
+    getParentElementWidth2() {
+      return "width: " + (window.Size.Settings.Width - (97 * 2)) + "px"
     }
   },
   data() {

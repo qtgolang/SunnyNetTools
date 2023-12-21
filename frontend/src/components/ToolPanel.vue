@@ -147,6 +147,23 @@ export default {
     }
   },
   methods: {
+    ReleaseBreak() {
+      if (window.vm.List.agSelectedLine != null) {
+        const Break = window.vm.List.agSelectedLine.data['断点模式']
+        let Theology = parseInt(window.vm.List.agSelectedLine.data.Theology)
+        if (Theology === -1 || Break === 0) {
+          return
+        }
+        this.$refs.Request.BreakClick(0)
+        /*
+        if (Break === 1) {
+          this.$refs.Request.BreakClick(2)
+        } else {
+          this.$refs.Request.BreakClick(0)
+        }
+        */
+      }
+    },
     getElementSize(Element) {
       const rect = Element.getBoundingClientRect();
       const left = rect.left;

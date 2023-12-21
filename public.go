@@ -303,8 +303,10 @@ func event(command string, args *JSON.SyJson) any {
 	case "CloseWindow":
 		runtime.Hide(app.ctx)
 		code, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(args.GetData("Filter"), "\\\\", "\\"))
+		KeysStrings, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(args.GetData("KeysStrings"), "\\\\", "\\"))
 		_TmpLock.Lock()
 		GlobalConfig.Filter = string(code)
+		GlobalConfig.KeysStrings = string(KeysStrings)
 		_ = GlobalConfig.saveToFile()
 		_TmpLock.Unlock()
 		app.App.SetIeProxy(true)

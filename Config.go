@@ -376,6 +376,7 @@ func RunCodeLog() (Str string) {
 	}
 	return Str
 }
+
 func RunHTTPRequestScriptCode(Conn *SunnyNet.HttpConn) bool {
 	h := &MapHash.Request{Display: true}
 	h.URL = Conn.Request.URL.String()
@@ -403,10 +404,14 @@ func RunHTTPRequestScriptCode(Conn *SunnyNet.HttpConn) bool {
 		return true
 	}
 	if Conn.Response != nil {
-		Body, _ := io.ReadAll(Conn.Response.Body)
-		_ = Conn.Response.Body.Close()
-		Conn.Response.Body = io.NopCloser(bytes.NewBuffer(Body))
-		h.Response.Body = Body
+		if Conn.Response.Body != nil {
+			Body, _ := io.ReadAll(Conn.Response.Body)
+			_ = Conn.Response.Body.Close()
+			Conn.Response.Body = io.NopCloser(bytes.NewBuffer(Body))
+			h.Response.Body = Body
+		} else {
+			h.Response.Body = []byte{}
+		}
 		h.Response.StateCode = Conn.Response.StatusCode
 		h.Response.Header = Conn.Response.Header
 	}
@@ -669,6 +674,7 @@ type UserConfig struct {
 	HostsRules             []ConfigReplaceRules `json:"HostsRules"`
 	DarkTheme              uint8                `json:"DarkTheme"`
 	Filter                 string               `json:"Filter"`
+	KeysStrings            string               `json:"KeysStrings"`
 	Columns                string               `json:"Columns"`
 	MustTcp                struct {
 		Open  bool   `json:"open"`
