@@ -577,13 +577,32 @@ export async function EventsDo(arg) {
             //恢复快捷键
         {
             try {
+                if (Args.GOOS !== "windows") {
+                    Object.keys(window.KeysStrings).forEach((key) => {
+                        if (window.KeysStrings[key]) {
+                            if (window.KeysStrings[key].value) {
+                                let obj = window.KeysStrings[key].value
+                                obj = obj.replaceAll("CTRL", "Control")
+                                window.KeysStrings[key].value = obj.replaceAll("ALT", "Option")
+                            }
+                        }
+                    });
+                }
                 const KeysStrings = JSON.parse(Args.KeysStrings)
                 Object.keys(KeysStrings).forEach((key) => {
                     window.KeysStrings[key].ctrlKey = KeysStrings[key].ctrlKey
                     window.KeysStrings[key].altKey = KeysStrings[key].altKey
                     window.KeysStrings[key].shiftKey = KeysStrings[key].shiftKey
                     window.KeysStrings[key].key = KeysStrings[key].key
-                    window.KeysStrings[key].value = KeysStrings[key].value
+                    if (Args.GOOS !== "windows") {
+                        let obj = KeysStrings[key].value
+                        obj = obj.replaceAll("CTRL", "Control")
+                        window.KeysStrings[key].value = obj.replaceAll("ALT", "Option")
+                    } else {
+                        let obj = KeysStrings[key].value
+                        obj = obj.replaceAll("Control", "CTRL")
+                        window.KeysStrings[key].value = obj.replaceAll("Option", "ALT")
+                    }
                 });
                 window.vm.List.agGridApi.onFilterChanged();
             } catch (e) {
