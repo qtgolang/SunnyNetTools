@@ -27,6 +27,11 @@
                   placement="top">
         <el-checkbox v-model="Option.authentication" label="开启身份验证模式"/>
       </el-tooltip>
+      <el-tooltip class="item" effect="dark" content="重置所有配置"
+                  placement="top">
+        <el-button icon="QuestionFilled" size="small" circle style="position: relative;top: -3px;left: 30px"
+                   @click="ResetAll"/>
+      </el-tooltip>
     </div>
 
     <div style="text-align: left;position: relative;left: 95px;">
@@ -80,6 +85,11 @@ export default {
     }
   },
   methods: {
+    ResetAll() {
+      CallGoDo("重置所有配置", {Port: this.Port}).then(res => {
+
+      })
+    },
     submitPort() {
       CallGoDo("修改端口号", {Port: this.Port}).then(res => {
         if (res) {

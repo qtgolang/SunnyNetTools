@@ -301,11 +301,14 @@ func event(command string, args *JSON.SyJson) any {
 		return obj.Find()
 	//主界面的关闭按钮点击
 	case "CloseWindow":
+		w, h := runtime.WindowGetSize(app.ctx)
 		runtime.Hide(app.ctx)
 		code, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(args.GetData("Filter"), "\\\\", "\\"))
 		KeysStrings, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(args.GetData("KeysStrings"), "\\\\", "\\"))
 		_TmpLock.Lock()
 		GlobalConfig.Filter = string(code)
+		GlobalConfig.Size.Width = w
+		GlobalConfig.Size.Height = h
 		GlobalConfig.KeysStrings = string(KeysStrings)
 		_ = GlobalConfig.saveToFile()
 		_TmpLock.Unlock()
@@ -316,6 +319,8 @@ func event(command string, args *JSON.SyJson) any {
 		return CommAnd.GetWayArray()
 	case "保存配置":
 		return SaveData(args)
+	case "获取脚本模板列表":
+		return Resource.ScriptTemplate
 	case "加载配置":
 		CallJs("加载配置", GlobalConfig)
 		return true
@@ -470,10 +475,24 @@ func event(command string, args *JSON.SyJson) any {
 	//UI获取运行端口
 	case "获取运行端口":
 		return app.App.Port()
+	case "重置所有配置":
+		s := GlobalConfig.ResetAll()
+		if s != "" {
+			CallJs("弹出错误提示", s)
+			return false
+		}
+		_GlobalConfig := &UserConfig{}
+		_GlobalConfig.LoadLocalFile()
+		configLock.Lock()
+		GlobalConfig = _GlobalConfig
+		configLock.Unlock()
+		CallJs("加载配置", GlobalConfig)
+		CallJs("弹出成功提示", "所有配置已重置！")
+		return true
 	case "获取脚本代码":
 		return []byte(FormatCode(string(GlobalConfig.GoScriptCode)))
 	case "获取默认Go脚本代码":
-		return []byte(FormatCode(string(Resource.GoCode)))
+		return []byte(FormatCode(string(Resource.GoCode) + Resource.ScriptAnnotation))
 	case "格式化Go脚本代码":
 		r1 := args.GetData("code")
 		r2 := Resource.Bs64ToBs(r1)

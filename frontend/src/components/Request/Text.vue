@@ -3,6 +3,7 @@
       ref="container"
       class="monaco-editor"
       style="text-align: left;height: 100%"
+      :drak="getTheme"
   ></div>
 </template>
 <script>
@@ -26,6 +27,12 @@ function IsRemoveMenu(value, zd) {
 export default {
   data() {
     return {
+      get theme() {
+        return window.Theme.IsDark
+      },
+      set theme(newValue) {
+        window.Theme.IsDark = newValue
+      },
       // 主要配置
       defaultOpts: {
         value: '', // 编辑器的值
@@ -226,6 +233,11 @@ export default {
     },
     HasModify() {
       return this.IsHasModify
+    }
+  },
+  computed:{
+    getTheme() {
+      return this.theme
     }
   }
 }

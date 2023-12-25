@@ -2,12 +2,10 @@ package main
 
 //仅允许使用官方包
 import (
-	"bytes"
-	"strings"
+	"net/http"
 )
 
 // 脚本最下方定义了一些常用函数
-
 // 请勿修改此结构体
 type HTTP struct {
 	uniqueId int                        `json:"uniqueId"` //请求唯一ID
@@ -27,21 +25,95 @@ type HTTP struct {
 	} `json:"Response"`
 }
 
-
 // 脚本回调事件 -> HTTP发起请求、HTTP响应请求、HTTP请求错误
 func HttpRequestCallbackFunction(Sunny *HTTP) {
-
-	//在URL中查找指定字符串
-
-	if Sunny.Type == 3 {
-		//默认为true,修改为false,不显示到列表中
-		Sunny.Display = false
-	}
-	if Sunny.Type == 1 {
-		Index := strings.Index(Sunny.URL, "baidu.com/123456")
-		if Index != -1 {
-			HTTPResponse200JSon(Sunny)
+	//当收到HTTP请求响应时
+	if Sunny.Type == 2 {
+		//定位请求,如果URL中不包含xxxxxxxxxxx,直接返回
+		if !Contains(Sunny.URL, "xxxxxxxxxxxxxxxxxxxxx") {
+			return
 		}
+		/*
+
+			AES、DES 加密解密
+			        GoAESCBCEncode(key,iv,Padding, data)    AES CBC 加密
+			        GoAESCBCDecrypt(key,iv,Padding, data)   AES CBC     解密
+			        GoAESECBEncode(key,Padding, data)       AES EBC 加密
+			        GoAESECBDecrypt(key,Padding, data)      AES EBC     解密
+			        GoDESCBCEncode(key,iv,Padding, data)    DES CBC 加密
+			        GoDESCBCDecrypt(key,iv,Padding, data)   DES CBC     解密
+			        GoDESECBEncode(key,Padding, data)       DES EBC 加密
+			        GoDESECBDecrypt(key,Padding, data)      DES EBC     解密
+			        Go3DESCBCEncode(key,iv,Padding, data)   3DES CBC 加密
+			        Go3DESCBCDecrypt(key,iv,Padding, data)  3DES CBC    解密
+			        Go3DESECBEncode(key,Padding, data)      3DES EBC 加密
+			        Go3DESECBDecrypt(key,Padding, data)     3DES EBC    解密
+
+			以上函数参数一致:
+			    key         可以是字符串(string)也可以是字节数组([]byte)
+			    iv          可以是字符串(string)也可以是字节数组([]byte)
+			    Padding     类型字符串 "NoPadding" "Zero" "Iso10126" "AnsiX923" "Iso97971" "pkcs5"
+			    data        类型字节数组([]byte)
+
+			返回值:(两个返回值)
+				返回值1:加密/解密的的字节数组([]byte)
+				返回值2:错误信息 成功返回nil
+
+		*/
+
+		//下面代码仅演示  AES CBC Decrypt 上面函数使用方式一致
+
+		/*
+			场景1:
+			假设这个请求 响应的数据是 AES CBC PKCS5 加密的
+				假设 key 是 2023202320232023
+				假设 iv  是 1234567887654321
+				假设数据是十六进制字符串 7F18C390DE4A29D478EE0B3DE8643F5B
+		*/
+		//先将十六进制字符串转为字节数组
+		HexData := GoHexDecode(string(Sunny.Response.Body))
+		if len(HexData) < 1 {
+			Log("GoHexDecode 失败")
+			return
+		}
+		//解密数据
+		DecData, err := GoAESCBCDecrypt("2023202320232023", "1234567887654321", "PKCS5", HexData)
+		if err != nil {
+			Log("Go AES CBC Decrypt 失败", err)
+			return
+		}
+		//将解密结果转为字符串
+		DecStr := string(DecData)
+		//打印字符串
+		Log(DecStr)
+		//如果需要将解密结果替换到响应的数据
+		Sunny.Response.Body = DecData
+
+		/*
+			场景2:
+			假设这个请求 响应的数据是 AES CBC PKCS5 加密的
+				假设 key 是 2023202320232023
+				假设 iv  是 1234567887654321
+				假设数据是Base64字符串 fxjDkN5KKdR47gs96GQ/Ww==
+		*/
+		//先将Base64字符串转为字节数组
+		Base64Data := GoBase64Decode(string(Sunny.Response.Body))
+		if len(Base64Data) < 1 {
+			Log("GoBase64Decode 失败")
+			return
+		}
+		//解密数据
+		DecData2, err := GoAESCBCDecrypt("2023202320232023", "1234567887654321", "PKCS5", Base64Data)
+		if err != nil {
+			Log("Go AES CBC Decrypt 失败", err)
+			return
+		}
+		//将解密结果转为字符串
+		DecStr2 := string(DecData2)
+		//打印字符串
+		Log(DecStr2)
+		//如果需要将解密结果替换到响应的数据
+		Sunny.Response.Body = DecData
 	}
 }
 
@@ -63,9 +135,7 @@ type WebSocket struct {
 
 // WebSocket回调事件 -> 发送消息、收到消息、连接成功、连接断开
 func WebSocketCallbackFunction(Sunny *WebSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 // 请勿修改此结构体
@@ -86,10 +156,7 @@ type TcpSocket struct {
 
 // tcp回调事件 -> 即将连接、发送消息、收到消息、连接成功、连接断开
 func tcpCallbackFunction(Sunny *TcpSocket) {
-	//Sunny.SetAgent("socket5://127.0.0.1:2022")
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 type UdpSocket struct {
@@ -104,8 +171,6 @@ type UdpSocket struct {
 
 // udp回调事件 -> 发送消息、收到消息、连接断开
 func udpCallbackFunction(Sunny *UdpSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 

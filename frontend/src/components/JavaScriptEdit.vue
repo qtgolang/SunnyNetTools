@@ -54,6 +54,10 @@ export default {
         GetCode: null,
         setValue: null,
         SetReadOnly: null,
+        getCursorPosition: null,
+        setCursorPosition: null,
+        getScrollPosition: null,
+        setScrollPosition: null,
         setModelLanguage: null
       }
     }
@@ -168,8 +172,21 @@ export default {
       this.Function.setModelLanguage = (lang) => {
         monaco.editor.setModelLanguage(editor.getModel(), lang);
       }
+      this.Function.getCursorPosition = () => {
+        return editor.getPosition()
+      }
+      this.Function.setCursorPosition = (Position) => {
+        editor.setPosition(Position);
+      }
+      this.Function.getScrollPosition = () => {
+        return editor.getScrollTop()
+      }
+      this.Function.setScrollPosition = (ScrollTop) => {
+        editor.setScrollTop(ScrollTop);
+      }
       this.Function.setValue = (newContent) => {
         editor.setValue(newContent);
+        editor.setScrollTop(0);
       }
       // 监听内容变化事件
       editor.getModel().onDidChangeContent(() => {
@@ -195,12 +212,35 @@ export default {
         this.Function.setModelLanguage(v)
       }
     },
+    GetCursorPosition() {
+      if (this.Function.getCursorPosition) {
+        return this.Function.getCursorPosition()
+      }
+      return null
+    },
+    SetCursorPosition(v) {
+      if (this.Function.setCursorPosition) {
+        this.Function.setCursorPosition(v)
+      }
+    },
+    GetScrollPosition() {
+      if (this.Function.getScrollPosition) {
+        return this.Function.getScrollPosition()
+      }
+      return null
+    },
+    SetScrollPosition(v) {
+      if (this.Function.setScrollPosition) {
+        this.Function.setScrollPosition(v)
+      }
+    },
     SetSaveFunc(v) {
       this.Function.Save = v
     },
     SetCode(newContent) {
       if (this.Function.setValue) {
         this.Function.setValue(newContent)
+
       }
     }
   }

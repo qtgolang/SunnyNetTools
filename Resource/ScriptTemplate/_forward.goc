@@ -2,12 +2,11 @@ package main
 
 //仅允许使用官方包
 import (
-	"bytes"
-	"strings"
+	"encoding/json"
+	"net/http"
 )
 
 // 脚本最下方定义了一些常用函数
-
 // 请勿修改此结构体
 type HTTP struct {
 	uniqueId int                        `json:"uniqueId"` //请求唯一ID
@@ -27,22 +26,58 @@ type HTTP struct {
 	} `json:"Response"`
 }
 
-
 // 脚本回调事件 -> HTTP发起请求、HTTP响应请求、HTTP请求错误
 func HttpRequestCallbackFunction(Sunny *HTTP) {
-
-	//在URL中查找指定字符串
-
-	if Sunny.Type == 3 {
-		//默认为true,修改为false,不显示到列表中
-		Sunny.Display = false
-	}
+	//当收到HTTP发起请求时
 	if Sunny.Type == 1 {
-		Index := strings.Index(Sunny.URL, "baidu.com/123456")
-		if Index != -1 {
-			HTTPResponse200JSon(Sunny)
+		//定位请求,如果URL中不包含xxxxxxxxxxx,直接返回
+		if !Contains(Sunny.URL, "xxxxxxxxxxxxxxxxxxxxx") {
+			return
+		}
+		//使用场景1,对这个请求请求使用代理IP
+		//假设你的代理API地址是 https://baidu.com/getip
+		data, Header, err := GoHTTPRequest("GET", "https://baidu.com/getip", "")
+		if err != nil {
+			Log("获取代理IP失败:", err)
+			return
+		}
+		//将数据转为字符串
+		ip := string(data)
+		Log("获取的代理IP:", ip)
+		//假设返回的ip是：1.2.3.4:1234 那么使用代理IP方式
+		Sunny.SetAgent("http://" + ip)
+		//假设有账号密码 admin 123456
+		Sunny.SetAgent("http://admin:123456@" + ip)
+
+		//使用场景2
+		//将数据转发到你自己的服务器 假设你的服务器地址是  "https://baidu.com/update"
+		//1.将数据序列化
+		SunnyData, e := json.Marshal(Sunny)
+		if e != nil {
+			Log("序列化数据失败")
+			return
+		}
+		//构造提交协议头
+		POSTHeader := make(http.Header)
+		POSTHeader["Content-Type"] = []string{"application/json; charset=UTF-8"}
+		//发送POST请求
+		ResponseData, ResponseHeader, err := GoHTTPRequest("POST", "https://baidu.com/update", SunnyData, POSTHeader)
+		if err != nil {
+			Log("提交请求失败:", err)
+			return
+		}
+		//ResponseHeader 是你服务器返回的协议头
+		//ResponseData 是你服务器响应的数据
+		if len(ResponseData) > 0 {
+			//直接修改响应为你服务器返回的内容
+			Sunny.Response.Body = ResponseData
+			//修改响应协议头为你服务器响应的协议头
+			Sunny.Response.Header = ResponseHeader
+			//修改响应状态码为200
+			Sunny.Response.StateCode = 200
 		}
 	}
+
 }
 
 // 请勿修改此结构体
@@ -63,9 +98,7 @@ type WebSocket struct {
 
 // WebSocket回调事件 -> 发送消息、收到消息、连接成功、连接断开
 func WebSocketCallbackFunction(Sunny *WebSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 // 请勿修改此结构体
@@ -86,10 +119,7 @@ type TcpSocket struct {
 
 // tcp回调事件 -> 即将连接、发送消息、收到消息、连接成功、连接断开
 func tcpCallbackFunction(Sunny *TcpSocket) {
-	//Sunny.SetAgent("socket5://127.0.0.1:2022")
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 type UdpSocket struct {
@@ -104,8 +134,6 @@ type UdpSocket struct {
 
 // udp回调事件 -> 发送消息、收到消息、连接断开
 func udpCallbackFunction(Sunny *UdpSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 

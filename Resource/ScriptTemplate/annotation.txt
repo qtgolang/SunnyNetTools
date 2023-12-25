@@ -1,0 +1,131 @@
+//内置函数
+/*
+----------------------------------------------------------------------------------------------------------------
+打印数据
+            Log(args1,args2)    可在左侧查看脚本日志,参数数量不限,参数类型不限,无返回值
+----------------------------------------------------------------------------------------------------------------
+加密数据
+            GoMD5(data,key)     取数据MD5，返回值:字节数组([]byte)
+                data:要加密的数据,类型可以是string 也可以是[]byte
+                key :可不传,传入表示取HMAC MD5,传入类型可以是string,也可以是[]byte
+
+            GoSHA1(data,key)     取数据SHA1，返回值:字节数组([]byte)
+                data:要加密的数据,类型可以是string 也可以是[]byte
+                key :可不传,传入表示取HMAC SHA1,传入类型可以是string,也可以是[]byte
+
+            GoSHA256(data,key)     取数据SHA256，返回值:字节数组([]byte)
+                data:要加密的数据,类型可以是string 也可以是[]byte
+                key :可不传,传入表示取HMAC SHA256,传入类型可以是string,也可以是[]byte
+
+            GoSHA512(data,key)     取数据SHA512，返回值:字节数组([]byte)
+                data:要加密的数据,类型可以是string 也可以是[]byte
+                key :可不传,传入表示取HMAC SHA512,传入类型可以是string,也可以是[]byte
+
+            GoHexEncode(data)     十六进制编码,返回值:字符串(string)
+                data:要操作的数据,类型可以是string 也可以是[]byte
+
+            GoHexDecode(data)     十六进制解码,返回值:字节数组([]byte)
+                data:要操作的数据,类型是string
+
+            GoBase64Encode(data)     Base64编码,返回值:字符串(string)
+                data:要操作的数据,类型可以是string 也可以是[]byte
+
+            GoBase64Decode(data)     Base64编码,返回值:字节数组([]byte)
+                data:要操作的数据,类型是string
+
+            GoRsaPrivateDecrypt(key, data)  RSA私钥解密 两个返回值
+                                                       返回值1:解密结果 类型 []byte
+                                                       返回值2:错误信息 类型 error 成功等于 nil
+                key:私钥    格式"-----BEGIN RSA PRIVATE KEY----- ....... -----END RSA PRIVATE KEY-----"
+                data:要操作的数据,类型是[]byte
+
+            GoRsaPublicEncrypt(key, data)  RSA公钥加密 两个返回值
+                                                       返回值1:加密结果 类型 []byte
+                                                       返回值2:错误信息 类型 error 成功等于 nil
+                key:公钥    格式"-----BEGIN PUBLIC KEY----- ..... -----END PUBLIC KEY-----"
+                data:要操作的数据,类型是[]byte
+
+
+----------------------------------------------------------------------------------------------------------------
+发起HTTP请求
+            GoHTTPRequest(method, url , body ,header)     发起HTTP请求,共有三个返回值:
+                                                    返回值1:响应的Body    类型:([]byte)
+                                                    返回值2:响应的Header  类型:(http.Header)
+                                                    返回值3:错误信息      类型:(error)
+                method: 请求方式 例如:"POST","GET" 等               类型:字符串(string)
+                url:    请求地址 例如:"https://baidu.com/123456"    类型:字符串(string)
+                body:   提交数据 类型:[]byte 或 字符串(string)
+                header: 请求地址 例如:"https://baidu.com/123456"    类型:http.Header    (这个参数可忽略不传)
+
+----------------------------------------------------------------------------------------------------------------
+AES、DES 加密解密
+        GoAESCBCEncode(key,iv,Padding, data)    AES CBC 加密
+        GoAESCBCDecrypt(key,iv,Padding, data)   AES CBC     解密
+        GoAESECBEncode(key,Padding, data)       AES EBC 加密
+        GoAESECBDecrypt(key,Padding, data)      AES EBC     解密
+        GoDESCBCEncode(key,iv,Padding, data)    DES CBC 加密
+        GoDESCBCDecrypt(key,iv,Padding, data)   DES CBC     解密
+        GoDESECBEncode(key,Padding, data)       DES EBC 加密
+        GoDESECBDecrypt(key,Padding, data)      DES EBC     解密
+        Go3DESCBCEncode(key,iv,Padding, data)   3DES CBC 加密
+        Go3DESCBCDecrypt(key,iv,Padding, data)  3DES CBC    解密
+        Go3DESECBEncode(key,Padding, data)      3DES EBC 加密
+        Go3DESECBDecrypt(key,Padding, data)     3DES EBC    解密
+
+以上函数参数一致:
+    key         可以是字符串(string)也可以是字节数组([]byte)
+    iv          可以是字符串(string)也可以是字节数组([]byte)
+    Padding     类型字符串 "NoPadding" "Zero" "Iso10126" "AnsiX923" "Iso97971" "pkcs5"
+    data        类型字节数组([]byte)
+
+返回值:(两个返回值)
+	返回值1:加密/解密的的字节数组([]byte)
+	返回值2:错误信息 成功返回nil
+----------------------------------------------------------------------------------------------------------------
+HTTP请求快速响应
+
+    HTTPResponse404(Sunny *HTTP)        传入HTTP回调函数的Sunny对象   响应状态码404,没有内容
+    HTTPResponse200(Sunny *HTTP)        传入HTTP回调函数的Sunny对象   响应状态码200,没有内容
+    HTTPResponse200IMG(Sunny *HTTP)     传入HTTP回调函数的Sunny对象   响应状态码200,内容为1像素的图片
+    HTTPResponse200Array(Sunny *HTTP)   传入HTTP回调函数的Sunny对象   响应状态码200,响应空的JSON数组
+    HTTPResponse200JSon(Sunny *HTTP)    传入HTTP回调函数的Sunny对象   响应状态码200,响应空的JSON对象
+----------------------------------------------------------------------------------------------------------------
+数据操作
+
+    StringReplaceAll(data, old, new)    返回值:替换后的字符串(string)
+        data:类型 字符串(string)    原始文本
+        old: 类型 字符串(string)    要替换的旧文本
+        new: 类型 字符串(string)    要替换的新文本
+
+    BytesReplaceAll(data, old, new)    返回值:替换后的字节数组([]byte)
+        data:类型 字节数组([]byte)    原始字节数组
+        old: 类型 字节数组([]byte)    要替换的旧字节数组
+        new: 类型 字节数组([]byte)    要替换的新字节数组
+
+    Contains(a,b)        返回值:逻辑型(bool)    a中是否包含b
+        a:字符串(string) 或 字节数组([]byte)
+        b:字符串(string) 或 字节数组([]byte)
+
+    StringIndex(a,b)     返回值:整数型(int)     a中不存在b,返回-1
+        a:字符串(string)
+        b:字符串(string)
+
+    BytesIndex(a,b)     返回值:整数型(int)      a中不存在b,返回-1
+        a:字节数组([]byte)
+        b:字节数组([]byte)
+
+    BytesAdd(a,b)       返回值:字节数组([]byte)     a + b 返回新的字节数组
+        a:字节数组([]byte)
+        b:字节数组([]byte)
+
+    ReadFile(filePath)     返回值:字节数组([]byte) 读取本地文件
+        filePath:字符串(string)   本地文件路径
+
+    WriteFile(filePath,data)     返回值:逻辑型(bool) 写到本地文件 成功返回true
+        filePath:字符串(string)   本地文件路径
+        data:    要写入的数据,可以是字节数组([]byte) 或 字符串(string)
+----------------------------------------------------------------------------------------------------------------
+*/
+
+
+

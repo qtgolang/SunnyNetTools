@@ -2,12 +2,10 @@ package main
 
 //仅允许使用官方包
 import (
-	"bytes"
-	"strings"
+	"net/http"
 )
 
 // 脚本最下方定义了一些常用函数
-
 // 请勿修改此结构体
 type HTTP struct {
 	uniqueId int                        `json:"uniqueId"` //请求唯一ID
@@ -27,21 +25,47 @@ type HTTP struct {
 	} `json:"Response"`
 }
 
-
 // 脚本回调事件 -> HTTP发起请求、HTTP响应请求、HTTP请求错误
 func HttpRequestCallbackFunction(Sunny *HTTP) {
-
-	//在URL中查找指定字符串
-
-	if Sunny.Type == 3 {
-		//默认为true,修改为false,不显示到列表中
-		Sunny.Display = false
-	}
+	//有两种修改方式
+	//方式1
+	//当收到HTTP发起请求时,这种方式，请求不会被发送，直接响应本地文件到客户端
 	if Sunny.Type == 1 {
-		Index := strings.Index(Sunny.URL, "baidu.com/123456")
-		if Index != -1 {
-			HTTPResponse200JSon(Sunny)
+		//定位请求,如果URL中不包含xxxxxxxxxxx,直接返回
+		if !Contains(Sunny.URL, "xxxxxxxxxxxxxxxxxxxxx") {
+			return
 		}
+		//读取本地文件
+		data := ReadFile(`c:\1.txt`)
+		//修改响应数据
+		Sunny.Response.Body = data
+		//修改响应状态码
+		Sunny.Response.StateCode = 200
+		//修改响应协议头
+		Sunny.Response.Header = make(http.Header)
+		Sunny.Response.Header["Server"] = []string{"Sunny"}
+		Sunny.Response.Header["Time"] = []string{"2023-12-31"}
+	}
+
+	//方式2
+	//当收到HTTP请求响应时,这种方式请求会被发送，修改的是服务器返回的数据
+	if Sunny.Type == 2 {
+		//定位请求,如果URL中不包含xxxxxxxxxxx,直接返回
+		if !Contains(Sunny.URL, "xxxxxxxxxxxxxxxxxxxxx") {
+			return
+		}
+		//读取本地文件
+		data := ReadFile(`c:\1.txt`)
+		//修改响应数据
+		Sunny.Response.Body = data
+		//修改响应状态码
+		Sunny.Response.StateCode = 200
+		//修改响应协议头
+		if Sunny.Response.Header == nil {
+			Sunny.Response.Header = make(http.Header)
+		}
+		Sunny.Response.Header["Server"] = []string{"Sunny"}
+		Sunny.Response.Header["Time"] = []string{"2023-12-31"}
 	}
 }
 
@@ -63,9 +87,7 @@ type WebSocket struct {
 
 // WebSocket回调事件 -> 发送消息、收到消息、连接成功、连接断开
 func WebSocketCallbackFunction(Sunny *WebSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 // 请勿修改此结构体
@@ -86,10 +108,7 @@ type TcpSocket struct {
 
 // tcp回调事件 -> 即将连接、发送消息、收到消息、连接成功、连接断开
 func tcpCallbackFunction(Sunny *TcpSocket) {
-	//Sunny.SetAgent("socket5://127.0.0.1:2022")
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 type UdpSocket struct {
@@ -104,8 +123,6 @@ type UdpSocket struct {
 
 // udp回调事件 -> 发送消息、收到消息、连接断开
 func udpCallbackFunction(Sunny *UdpSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 

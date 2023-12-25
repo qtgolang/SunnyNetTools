@@ -2,12 +2,10 @@ package main
 
 //仅允许使用官方包
 import (
-	"bytes"
-	"strings"
+	"net/http"
 )
 
 // 脚本最下方定义了一些常用函数
-
 // 请勿修改此结构体
 type HTTP struct {
 	uniqueId int                        `json:"uniqueId"` //请求唯一ID
@@ -27,21 +25,88 @@ type HTTP struct {
 	} `json:"Response"`
 }
 
-
 // 脚本回调事件 -> HTTP发起请求、HTTP响应请求、HTTP请求错误
 func HttpRequestCallbackFunction(Sunny *HTTP) {
-
-	//在URL中查找指定字符串
-
-	if Sunny.Type == 3 {
-		//默认为true,修改为false,不显示到列表中
-		Sunny.Display = false
-	}
+	//当发起HTTP请求时
 	if Sunny.Type == 1 {
-		Index := strings.Index(Sunny.URL, "baidu.com/123456")
-		if Index != -1 {
-			HTTPResponse200JSon(Sunny)
+
+		/*
+			假设请求有协议头
+
+				Connection: Keep-Alive
+				Content-Type: application/json; charset=UTF-8
+				User-Agent: okhttp/4.11.0
+				platform: android
+
+		*/
+
+		/*
+			下面是	获取协议头数量
+		*/
+		Log(len(Sunny.Header))
+		/*
+			下面是	获取协议头
+		*/
+		//方式1
+		Sunny.Header.Get("content-type") //自动处理协议头大小写->将返回 application/json; charset=UTF-8
+		//方式2
+		HeaderArray1 := Sunny.Header["Content-Type"] //不会自动处理协议头大小写 ->返回的是一个字符串数组
+		if len(HeaderArray1) > 0 {
+			Header := HeaderArray1[0] //返回 application/json; charset=UTF-8
 		}
+		//如果传入小写
+		HeaderArray2 := Sunny.Header["content-type"] //不会自动处理协议头大小写 ->返回的是一个字符串数组
+		// 将失败,len(HeaderArray2)===0
+		/*
+			发起请求时添加一个协议头
+
+			方式1
+				自动处理协议头大小写
+				content-type ->	Content-Type
+
+			方式2
+				不会自动处理协议头大小写
+				content-type ->	content-type
+		*/
+		//方式1
+		Sunny.Header.Set("content-type", "application/json")
+		//方式2
+		Sunny.Header["content-type"] = []string{"application/json"}
+
+		/*
+			删除一个协议头
+
+			方式1
+				不会自动处理协议头大小写
+					例如拥有协议头	Content-Type 如果 删除 content-type 会失败
+			方式2
+				会自动处理协议头大小写
+					例如拥有协议头	Content-Type 如果 删除 content-type 会成功
+		*/
+		//方式1
+		delete(Sunny.Header, "content-type")
+		//方式2
+		Sunny.Header.Del("content-type")
+	}
+
+	//当收到HTTP请求响应时
+	if Sunny.Type == 2 {
+		/*
+			假设请求响应协议头
+
+				Content-Type: text/html; charset=utf-8
+				Date: Sun, 24 Dec 2023 19:31:42 GMT
+				Server: BWS/1.1
+				Set-Cookie: aaaaaaaaaa=3983; path=/;
+				Set-Cookie: bbbbbbbbbbb=3983; path=/;
+				Traceid: 1703446302263800935417319168420952027778
+				X-Ua-Compatible: IE=Edge,chrome=1
+
+		*/
+		//获取响应的Cookie,就不要使用Sunny.Response.Header.Get("Set-Cookie")了
+		Cookies := Sunny.Response.Header["Set-Cookie"]
+		Log(Cookies) //这里输出的就是数组 aaaaaaaaaa=3983; path=/; 和 bbbbbbbbbbb=3983; path=/;
+		//其他操作等同于发起请求的操作
 	}
 }
 
@@ -63,9 +128,7 @@ type WebSocket struct {
 
 // WebSocket回调事件 -> 发送消息、收到消息、连接成功、连接断开
 func WebSocketCallbackFunction(Sunny *WebSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 // 请勿修改此结构体
@@ -86,10 +149,7 @@ type TcpSocket struct {
 
 // tcp回调事件 -> 即将连接、发送消息、收到消息、连接成功、连接断开
 func tcpCallbackFunction(Sunny *TcpSocket) {
-	//Sunny.SetAgent("socket5://127.0.0.1:2022")
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 type UdpSocket struct {
@@ -104,8 +164,6 @@ type UdpSocket struct {
 
 // udp回调事件 -> 发送消息、收到消息、连接断开
 func udpCallbackFunction(Sunny *UdpSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 

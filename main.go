@@ -14,13 +14,15 @@ var app = NewApp()
 
 func main() {
 	// Create an instance of the app structure
-
+	Size := GlobalConfig.Size
 	// Create application with options
 	err := wails.Run(&options.App{
 		Frameless: true,
 		Title:     "SunnyNet",
-		Width:     1540,
-		Height:    700,
+		Width:     Size.Width,
+		Height:    Size.Height,
+		MinWidth:  823,
+		MinHeight: 388,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

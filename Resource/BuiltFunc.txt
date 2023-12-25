@@ -1,9 +1,12 @@
 package main
 
 import (
+	"io"
+	"os"
 	"fmt"
 	"sync"
 	"net/http"
+	"net/url"
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
@@ -17,11 +20,9 @@ import (
 	"crypto/sha512"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
-	"io"
-	"os"
 	mathrand "math/rand"
-	"net/http"
 	"strings"
 )
 
@@ -1078,6 +1079,7 @@ func HTTPResponse200JSon(Sunny *HTTP) {
 	Sunny.Response.StateCode = 200
 	Sunny.Response.Header = make(http.Header)
 	Sunny.Response.Header.Set("Server", "Sunny")
+	Sunny.Response.Header.Set("Content-Type", "application/json")
 	Sunny.Response.Body = []byte("{}")
 }
 
@@ -1087,6 +1089,7 @@ func HTTPResponse200Array(Sunny *HTTP) {
 	Sunny.Response.StateCode = 200
 	Sunny.Response.Header = make(http.Header)
 	Sunny.Response.Header.Set("Server", "Sunny")
+	Sunny.Response.Header.Set("Content-Type", "application/json")
 	Sunny.Response.Body = []byte("[]")
 }
 
@@ -1105,6 +1108,7 @@ func HTTPResponse200IMG(Sunny *HTTP) {
 	Sunny.Response.StateCode = 200
 	Sunny.Response.Header = make(http.Header)
 	Sunny.Response.Header.Set("Server", "Sunny")
+	Sunny.Response.Header.Set("Content-Type", "image/gif")
 	Sunny.Response.Body = GoBase64Decode("R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==")
 }
 
@@ -1155,5 +1159,7 @@ func WriteFile(filePath string, data any) bool {
 	}
 	return os.WriteFile(filePath, _data, 777) == nil
 }
+
+
 
 

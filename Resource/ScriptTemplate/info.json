@@ -1,0 +1,42 @@
+[
+  {
+    "Name": "替换URL参数操作 示例代码",
+    "Explain": "HTTP发起请求 替换URL中的参数的示例代码",
+    "FileName": "_ReplaceUrlParameter.goc"
+  },
+  {
+    "Name": "协议头操作 示例代码",
+    "Explain": "【HTTP发起请求、响应】 新增、删除、修改 协议头的操作",
+    "FileName": "_header.goc"
+  },
+  {
+    "Name": "HTTP->修改响应Json 示例代码",
+    "Explain": "【HTTP响应】 修改响应的JSON字符串",
+    "FileName": "_response.goc"
+  },
+  {
+    "Name": "HTTP->响应本地文件 示例代码",
+    "Explain": "【HTTP响应】 修改响应为本地文件",
+    "FileName": "_responseFile.goc"
+  },
+  {
+    "Name": "HTTP->自定义修改响应",
+    "Explain": "【HTTP响应】 自定义修改响应内容",
+    "FileName": "_quickResponse.goc"
+  },
+  {
+    "Name": "脚本代码中使用POST/GET 示例代码",
+    "Explain": "脚本代码中使用POST/GET发送请求",
+    "FileName": "_forward.goc"
+  },
+  {
+    "Name": "脚本代码中使用 AES / DES / 3DES 示例代码",
+    "Explain": " AES / DES / 3DES 在脚本代码中使用示例",
+    "FileName": "_aesdes.goc"
+  },
+  {
+    "Name": "脚本代码中使用 RSA 示例代码",
+    "Explain": " RSA / 公钥加密 / 私钥解密 在脚本代码中使用示例",
+    "FileName": "_rsa.goc"
+  }
+]

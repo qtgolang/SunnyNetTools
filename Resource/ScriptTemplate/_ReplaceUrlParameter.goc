@@ -2,12 +2,11 @@ package main
 
 //仅允许使用官方包
 import (
-	"bytes"
-	"strings"
+	"net/http"
+	"net/url"
 )
 
 // 脚本最下方定义了一些常用函数
-
 // 请勿修改此结构体
 type HTTP struct {
 	uniqueId int                        `json:"uniqueId"` //请求唯一ID
@@ -27,21 +26,34 @@ type HTTP struct {
 	} `json:"Response"`
 }
 
-
 // 脚本回调事件 -> HTTP发起请求、HTTP响应请求、HTTP请求错误
 func HttpRequestCallbackFunction(Sunny *HTTP) {
-
-	//在URL中查找指定字符串
-
-	if Sunny.Type == 3 {
-		//默认为true,修改为false,不显示到列表中
-		Sunny.Display = false
-	}
+	//当发起HTTP请求时操作
 	if Sunny.Type == 1 {
-		Index := strings.Index(Sunny.URL, "baidu.com/123456")
-		if Index != -1 {
-			HTTPResponse200JSon(Sunny)
+
+		// 解析URL
+		uri, e := url.Parse(Sunny.URL)
+		if e != nil {
+			//如果解析URL失败，直接返回
+			return
 		}
+
+		// 解析URL中的参数
+		queryValues, err := url.ParseQuery(uri.RawQuery)
+		if err != nil {
+			//解析URL中的参数失败，直接返回
+			return
+		}
+
+		// 修改URL中的参数 Token 值为123456
+		queryValues.Set("Token", "123456")
+
+		// 修改URL中的参数 UserID
+		queryValues.Del("UserID")
+
+		//保存修改
+		uri.RawQuery = queryValues.Encode()
+		Sunny.URL = uri.String()
 	}
 }
 
@@ -63,9 +75,7 @@ type WebSocket struct {
 
 // WebSocket回调事件 -> 发送消息、收到消息、连接成功、连接断开
 func WebSocketCallbackFunction(Sunny *WebSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 // 请勿修改此结构体
@@ -86,10 +96,7 @@ type TcpSocket struct {
 
 // tcp回调事件 -> 即将连接、发送消息、收到消息、连接成功、连接断开
 func tcpCallbackFunction(Sunny *TcpSocket) {
-	//Sunny.SetAgent("socket5://127.0.0.1:2022")
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 type UdpSocket struct {
@@ -104,8 +111,6 @@ type UdpSocket struct {
 
 // udp回调事件 -> 发送消息、收到消息、连接断开
 func udpCallbackFunction(Sunny *UdpSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 

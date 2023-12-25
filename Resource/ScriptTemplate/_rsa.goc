@@ -2,12 +2,10 @@ package main
 
 //仅允许使用官方包
 import (
-	"bytes"
-	"strings"
+	"net/http"
 )
 
 // 脚本最下方定义了一些常用函数
-
 // 请勿修改此结构体
 type HTTP struct {
 	uniqueId int                        `json:"uniqueId"` //请求唯一ID
@@ -27,21 +25,89 @@ type HTTP struct {
 	} `json:"Response"`
 }
 
-
 // 脚本回调事件 -> HTTP发起请求、HTTP响应请求、HTTP请求错误
 func HttpRequestCallbackFunction(Sunny *HTTP) {
-
-	//在URL中查找指定字符串
-
-	if Sunny.Type == 3 {
-		//默认为true,修改为false,不显示到列表中
-		Sunny.Display = false
-	}
+	//当收到HTTP发起请求时
 	if Sunny.Type == 1 {
-		Index := strings.Index(Sunny.URL, "baidu.com/123456")
-		if Index != -1 {
-			HTTPResponse200JSon(Sunny)
+		//定位请求,如果URL中不包含xxxxxxxxxxx,直接返回
+		if !Contains(Sunny.URL, "xxxxxxxxxxxxxxxxxxxxx") {
+			return
 		}
+		/*
+			场景1:私钥解密
+			假设提交数据是RSA加密的Base64字符串 fxjDkN5KKdR47gs96G...............Q/Ww==
+
+		*/
+		//先将Base64字符串转为字节数组
+		Base64Data := GoBase64Decode(string(Sunny.Body))
+		if len(Base64Data) < 1 {
+			Log("GoBase64Decode 失败")
+			return
+		}
+		//假设你的私钥匙是
+		RsaPrivate := `
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpQIBAAKCAQEA+1I4kkYK4/DnGNc+fsxriIscvEVlY6XuZ73+Uc20gqNi/s0B
+vcBLuAVdywF8gWtUG8SDpASCQD0Wqmp38TLKbzJBbnRLcAATz1sgKyBGamC3y/sb
+Y3FOvRjyooayknwM0jGL/DGHGxGTQQ9ME/49R7I2Yrc/xKX25s71UdIKo3GpJO3r
+drRMpZEsHV9CjLlI8zJy0CivnvalP6tgiAd9qZCluj2jAzvocQ3bCMFfNN6+EILP
+5mvcP//vtAj4VMooMm+pNY4eOYO/1dTOmhpYCvJoCatm3Yxo4VmR8RD7PpWc38wV
+bGelgzkPmq+qtlN7fG8wmBA9ShAlMTmIfPMz/QIDAQABAoIBAQC9BWMNCOcp90co
+1MLpRUBfixmKtLsEDonXtvsvdYKdett6/p+foqCQgGDBzZViFWJGHDBSTR3VyNxi
+Qf+CBoxgw7CYrZkLXNOJcmUoanbrjWDPZ0Z7LX5mFPxwptRp/ij6ck9x16JhBn/1
+P9cddmuKoAvthRvOAHFJuUCjUFG2CMn8a1IKdobUyMHvS3YCnAVmjcgCEqQx3Dm/
+IoRhelfVtR9c6XsqdJBav7Br0RT1TH72CDxilg3YNx9VU1FlT1Iy/k9hyNQhM56M
+N/iuYrNRxyD64LMkmQ+q4RHjH6lE07GDoob9tA931euzfMJNetJPvfekpvlr4hkX
+kLG3g/11AoGBAP5WW/tjLzgF8bwCIliKubv4bkNIPQ7WNrnL1qX7tsuZ7HkBz4GB
+COIDFb3OIVBP6lNMbvpUAnOqKvPcC13is8PTHz3Ng8BcKfmJL0K8RNz8a832vM9Z
+uSnH65KfUD6bM6/FpIzg7Csssizhfd17b0QLDxN1UtOPdSATlNLm8SsXAoGBAPz2
+0GTp48upXO9LFxOpFTad2zTIUCT9s7DUdRcZUaZJbmTlDLPwRlyvG5CrtYT9nfUD
+Sc9F4DtSPfXHyHfzjl9/wZZPhSu9mRjKecJd5uwoAjjmmxvs5ucufcQ282jDdBd/
+BnOo9hFb/70ufu8Ayh1I5QxiCsL3hjmJeZhsLLYLAoGBANxgU98k9/shG25+ouf5
+fColftUJuO4sKsselmTIEIGmY8IOEZDzD5FWfvYxr6f5Nt7qcZaySFWUcxdN6QN2
+tbDONFnGw4xfz3cKqUq3+ytIBNk4HC3GXqyXL8WiCVPWAxkgtg3jrn9SgShmUjsh
+Ay4ALxX7KMNroF8k2GVN+lYNAoGBAOGGOex+CTS9XbmJPJ2ulNcIjTHVlH4mIVl5
+UJqzW/Pga6dP/a8+e7yN8QldzIswgO67a8Z7CZpZjBvfbX5jiX7iq3iSlKuWcTOE
+8GC0zvekA7cvAQI4hvN8o2uXghLYjluUR/A9poN7fdjv5wK1tXu+TVZo4idH/ka1
+pc6aQpJZAoGAdVku82hDNOjsg0RL7yuoxYhtX95ffUbeuwAXeMzDXfJx/uf0xIHz
+wYlROeNOo5XOpKxXBtb+62WNEqT7TRAevkNofoDO3Gcq91/5hFifcm6ek9YBCNb1
+cen211CU4RwjZRWqQTS4CrvlS9SbWx9NV2/WkQNO5Twr4fWzpBBK4U8=
+-----END RSA PRIVATE KEY-----
+`
+		DecData, err := GoRsaPrivateDecrypt(RsaPrivate, Base64Data)
+		if err != nil {
+			Log("RSA解密失败", err)
+			return
+		}
+		Log("RSA解密结果:", string(DecData))
+
+		/*
+			场景2:公钥加密
+			假设提交数据是 123456abcd 将提交数据RSA加密后发送到你自己服务器 https://1.2.3.4:8080/api
+		*/
+		//假设你的公钥是
+		RsaPublic := `-----BEGIN PUBLIC KEY-----
+MIIBCgKCAQEA+1I4kkYK4/DnGNc+fsxriIscvEVlY6XuZ73+Uc20gqNi/s0BvcBL
+uAVdywF8gWtUG8SDpASCQD0Wqmp38TLKbzJBbnRLcAATz1sgKyBGamC3y/sbY3FO
+vRjyooayknwM0jGL/DGHGxGTQQ9ME/49R7I2Yrc/xKX25s71UdIKo3GpJO3rdrRM
+pZEsHV9CjLlI8zJy0CivnvalP6tgiAd9qZCluj2jAzvocQ3bCMFfNN6+EILP5mvc
+P//vtAj4VMooMm+pNY4eOYO/1dTOmhpYCvJoCatm3Yxo4VmR8RD7PpWc38wVbGel
+gzkPmq+qtlN7fG8wmBA9ShAlMTmIfPMz/QIDAQAB
+-----END PUBLIC KEY-----`
+
+		EncData, err := GoRsaPublicEncrypt(RsaPublic, Sunny.Body)
+		if err != nil {
+			Log("RSA加密失败", err)
+			return
+		}
+		header := make(http.Header)
+		header.Set("Content-Type", "application/octet-stream")
+		resBody, resHeader, err := GoHTTPRequest("POST", "https://1.2.3.4:8080/api", EncData, header)
+		if err != nil {
+			Log("发送到API失败", err)
+			return
+		}
+		Log("API响应Header", resHeader, "API响应Body", string(resBody))
 	}
 }
 
@@ -63,9 +129,7 @@ type WebSocket struct {
 
 // WebSocket回调事件 -> 发送消息、收到消息、连接成功、连接断开
 func WebSocketCallbackFunction(Sunny *WebSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 // 请勿修改此结构体
@@ -86,10 +150,7 @@ type TcpSocket struct {
 
 // tcp回调事件 -> 即将连接、发送消息、收到消息、连接成功、连接断开
 func tcpCallbackFunction(Sunny *TcpSocket) {
-	//Sunny.SetAgent("socket5://127.0.0.1:2022")
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
+
 }
 
 type UdpSocket struct {
@@ -104,8 +165,5 @@ type UdpSocket struct {
 
 // udp回调事件 -> 发送消息、收到消息、连接断开
 func udpCallbackFunction(Sunny *UdpSocket) {
-	if Sunny.Type == 2 {
-		Log(string(Sunny.Body))
-	}
-}
 
+}

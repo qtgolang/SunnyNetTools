@@ -202,7 +202,8 @@ func RunCode() (SErr string) {
 		}
 	}
 	CodeBody := extractCodeBody(src)
-	_, err := iEval.Eval(ca + CodeBody)
+	S := ca + CodeBody
+	_, err := iEval.Eval(S)
 	if err != nil {
 		errorSrc := strings.ReplaceAll(err.Error(), "_.go:", "")
 		ar := strings.Split(errorSrc, "error: unable to find source related to:")
@@ -680,6 +681,10 @@ type UserConfig struct {
 		Open  bool   `json:"open"`
 		Rules string `json:"Rules"`
 	} `json:"MustTcp"`
+	Size struct {
+		Width  int `json:"Width"`
+		Height int `json:"Height"`
+	} `json:"Size"`
 	Cert struct {
 		Default bool   `json:"Default"`
 		CaPath  string `json:"CaPath"`
@@ -693,6 +698,12 @@ func (c *UserConfig) loadDefaultValue() {
 	c.GOOS = runtime.GOOS
 	if c.RequestCertManager == nil {
 		c.RequestCertManager = make(map[int]ConfigRequestCertManager)
+	}
+	if c.Size.Width < 822 {
+		c.Size.Width = 1540
+	}
+	if c.Size.Height < 387 {
+		c.Size.Height = 700
 	}
 	if c.Filter == "" {
 		c.Filter = "{\"响应长度\":{\"filterType\":\"text\",\"type\":\"notContains\",\"filter\":\"0/0\"},\"响应类型\":{\"filterType\":\"text\",\"type\":\"notEqual\",\"filter\":\"error\"}}"
@@ -829,10 +840,10 @@ func (c *UserConfig) loadDefaultValue() {
 	//判断加载默认的脚本代码
 	{
 		if len(c.GoScriptCode) < 1 {
-			c.GoScriptCode = Resource.GoCode
+			c.GoScriptCode = []byte(string(Resource.GoCode) + Resource.ScriptAnnotation)
 		}
 		if RunCode() != "" {
-			c.GoScriptCode = Resource.GoCode
+			c.GoScriptCode = []byte(string(Resource.GoCode) + Resource.ScriptAnnotation)
 		}
 	}
 	//基本设置
@@ -853,6 +864,17 @@ func (c *UserConfig) loadDefaultValue() {
 			c.MustTcp.Rules = "*.qqww.com;ww.baidu.com;google.com"
 		}
 	}
+}
+func (c *UserConfig) ResetAll() string {
+	configLock.Lock()
+	homeDir, err1 := os.UserHomeDir()
+	if err1 != nil {
+		configLock.Unlock()
+		return "获取用户目录失败:" + err1.Error()
+	}
+	os.Remove(homeDir + "/Sunny/Config.json")
+	configLock.Unlock()
+	return ""
 }
 func (c *UserConfig) saveToFile() error {
 	homeDir, err1 := os.UserHomeDir()
@@ -931,8 +953,12 @@ func (c *UserConfig) ResetColorConfig(dark bool) error {
 }
 
 var configLock sync.Mutex
-var GlobalConfig UserConfig
+var GlobalConfig *UserConfig
 
+func init() {
+	GlobalConfig = &UserConfig{}
+	GlobalConfig.LoadLocalFile()
+}
 func fileExists(filePath string) bool {
 	_, err := os.Stat(filePath)
 	if err != nil {

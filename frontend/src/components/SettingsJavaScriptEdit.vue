@@ -66,10 +66,34 @@
       </el-menu>
     </div>
     <div class="javascriptEdit">
-      <JavaScriptEdit v-show="scriptLogView===false" ref="goCode" height="100%" :textType="'go'" :glyphMargin="false"
-                      :readOnly="false" @keydown="handleKeyDown" offWordWrap="on"
-                      Text="" Name="JavaScriptEdit"/>
-      <div v-if="scriptLogView" style="height: 100%;width: 100%">
+      <div class="codeEditHeads" v-show="scriptLogView===false">
+        <el-select class="m-2" placeholder="你可以选择脚本模板-示例  参考代码,快速了解脚本代码的使用" size="small"
+                   style="position: relative;top:-1px;width: 100%">
+          <el-option
+              v-for="item in options"
+              :key="item.Name"
+              :label="item.Name"
+              :value="item.Name"
+              @click="templateChange(item)"
+          >
+            <el-tooltip
+                class="box-item"
+                effect="dark"
+                :content="item.Explain"
+                placement="right"
+            >
+              {{ item.Name }}
+            </el-tooltip>&nbsp;&nbsp;
+          </el-option>
+        </el-select>
+      </div>
+      <div class="codeEdit" v-show="scriptLogView===false">
+        <JavaScriptEdit ref="goCode" height="100%" :textType="'go'" :glyphMargin="false"
+                        :readOnly="false" @keydown="handleKeyDown" offWordWrap="on"
+                        Text="" Name="JavaScriptEdit"/>
+      </div>
+
+      <div v-show="scriptLogView" style="height: 100%;width: 100%">
         <span> 仅显示最后1000条日志 </span>
         <Text ref="scriptLog" height="calc(100% - 20px)" :textType="'plaintext'" :glyphMargin="false"
               :readOnly="false" offWordWrap="on"
@@ -98,36 +122,43 @@ export default defineComponent({
       set theme(newValue) {
         window.Theme.IsDark = newValue
       },
+      options: []
     }
   },
   mounted() {
-
-  }, computed: {
+    CallGoDo("获取脚本模板列表", null).then(res => {
+      for (let i = 0; i < res.length; i++) {
+        this.options.push(res[i])
+      }
+    })
+  },
+  computed: {
     getBackColor1() {
-      if (this.theme){
+      if (this.theme) {
         return "background-color: rgb(45,52,54);z-index: 1000"
       }
-      return "background-color:"+"#ffffff"+";z-index: 1000";
+      return "background-color:" + "#ffffff" + ";z-index: 1000";
     },
     getBackColor2() {
-      if (this.theme){
+      if (this.theme) {
         return "background-color: rgb(45,52,54)"
       }
-      return "background-color:"+"#ffffff"+";";
+      return "background-color:" + "#ffffff" + ";";
     }
   },
   methods: {
+    templateChange(item) {
+      this.$refs.goCode.SetCode(item.Data)
+      ElMessage({
+        message: '已加载:' + item.Name,
+        type: 'success',
+      })
+    },
     SetCode(code) {
       this.$refs.goCode.SetCode(code)
-      this.formatCode(null)
     },
     formatCode(event) {
-      this.scriptLogView = false
-      this.$nextTick(() => {
-        CallGoDo("格式化Go脚本代码", {code: StrBase64Encode(this.$refs.goCode.GetCode())}).then(res => {
-          this.$refs.goCode.SetCode(Base64DecodeStr(res))
-        })
-      })
+      this.saveCode(event)
     },
     Back() {
       window.vm.Settings.deselect()
@@ -136,8 +167,12 @@ export default defineComponent({
       this.scriptLogView = false
       this.$nextTick(() => {
         CallGoDo("格式化Go脚本代码", {code: StrBase64Encode(this.$refs.goCode.GetCode())}).then(res => {
+          let pos = this.$refs.goCode.GetCursorPosition()
+          let Scroll = this.$refs.goCode.GetScrollPosition()
           this.$refs.goCode.SetCode(Base64DecodeStr(res))
           this.$nextTick(() => {
+            this.$refs.goCode.SetCursorPosition(pos)
+            this.$refs.goCode.SetScrollPosition(Scroll)
             CallGoDo("保存Go脚本代码", {code: StrBase64Encode(this.$refs.goCode.GetCode())}).then(res => {
               if (res === "") {
                 ElMessage({
@@ -161,6 +196,7 @@ export default defineComponent({
       this.$nextTick(() => {
         CallGoDo("获取默认Go脚本代码", {code: StrBase64Encode(this.$refs.goCode.GetCode())}).then(res => {
           this.SetCode(Base64DecodeStr(res))
+          this.$refs.goCode.SetScrollPosition(0)
         })
       })
     },
@@ -191,6 +227,14 @@ export default defineComponent({
   position: absolute;
 }
 
+.codeEditHeads {
+  height: 27px;
+}
+
+.codeEdit {
+  height: calc(100% - 27px);
+}
+
 .javascriptEdit0 {
   position: absolute;
   height: 100%;
@@ -202,7 +246,7 @@ export default defineComponent({
 .javascriptEdit2 {
   top: 0px;
   left: 0px;
-  height:calc(100% - 0px);
+  height: calc(100% - 0px);
   width: calc(100% - 0px);
   position: absolute;
 }
