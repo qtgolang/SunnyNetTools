@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"bytes"
 	"github.com/Trisia/gosysproxy"
+	"github.com/atotto/clipboard"
 	gops "github.com/mitchellh/go-ps"
 	"github.com/qtgolang/SunnyNet/public"
 	"golang.org/x/text/encoding/simplifiedchinese"
@@ -16,22 +17,29 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"sync"
 	"syscall"
 )
 
-func GetDesktopPath() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
+var UserSelectPath = ""
 
-	return filepath.Join(homeDir, "Desktop"), nil
+func GetDesktopPath() (string, error) {
+	if UserSelectPath != "" {
+		return UserSelectPath, nil
+	}
+	dir, E := filepath.Abs(filepath.Dir(os.Args[0]))
+	return strings.Replace(dir, "\\", "/", -1), E
 }
+
+var pidLock sync.Mutex
 
 func GetPidName(pid int) string {
 	if pid < 1 {
 		return "代理"
 	}
+	pidLock.Lock()
+	defer pidLock.Unlock()
 	process, err := gops.FindProcess(pid)
 	if err != nil {
 		return strconv.Itoa(pid)
@@ -43,7 +51,6 @@ func GetPidName(pid int) string {
 }
 
 func SetIEProxy(Set bool, Port int) bool {
-
 	if !Set {
 		_ = gosysproxy.Off()
 		return true
@@ -123,4 +130,7 @@ func GetWayArray() []string {
 		}
 	}
 	return ipArray
+}
+func ClipboardText(text string) error {
+	return clipboard.WriteAll(text)
 }

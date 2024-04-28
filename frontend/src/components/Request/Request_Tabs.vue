@@ -25,6 +25,9 @@
       <span v-if="DisplayHTTPHeader" v-show="HTTPTabs[7].Show" @click="eHeaderClick(HTTPTabs[7])"
             :class="HTTPTabs[7].class"
             role="tab"> {{ HTTPTabs[7].name }} </span>
+      <span v-if="DisplayHTTPHeader" v-show="HTTPTabs[8].Show" @click="eHeaderClick(HTTPTabs[8])"
+            :class="HTTPTabs[8].class"
+            role="tab"> {{ HTTPTabs[8].name }} </span>
       <div v-if="DisplayHTTPHeader===false" v-for="item in TCPTabs">
         <span role="tab" :class="item.class" aria-label="{{ item.name }}" @click="eHeaderClick(item)">
             <div>{{ item.name }}</div>
@@ -79,7 +82,11 @@
              :style="GetBreakpointStateStyle">
           <TcpView ref="WebSocket" :readOnly="readOnly" :width="BodyRectWidth"/>
         </div>
-        <div style="width: 100%; height: 30px; display: flex; justify-content: center; align-items: center;">
+        <div v-show="HTTPTabs[8].visible&&DisplayHTTPHeader" :style="GetBreakpointStateStyle">
+          <ImgValue ref="Img" :height="BodyRectHeight" :width="BodyRectWidth" :readOnly="readOnly"/>
+        </div>
+        <div v-show="isBreak"
+             style="width: 100%; height: 30px; display: flex; justify-content: center; align-items: center;">
           <div
               style="margin: 0 10px; background-color: #f64141; height: 28px; line-height: 28px; width: 110px; border-radius: 5px;">
             &nbsp;断点命中,然后->&nbsp;
@@ -109,6 +116,7 @@ import List from "./List.vue";
 import JSon from "./JSon.vue";
 import HexView from "./HexView.vue";
 import TcpView from "./WebSocketView.vue";
+import ImgValue from "../Response/IMGView.vue";
 
 export default {
   props: ['Theology', 'RequestWay'],
@@ -140,6 +148,7 @@ export default {
     List,
     VueText,
     JavaScriptEdit,
+    ImgValue,
   },
   data() {
     return {
@@ -170,7 +179,8 @@ export default {
         {id: 4, name: "十六进制视图", class: "ag-tab", visible: false, Show: true},
         {id: 5, name: "Cookies", class: "ag-tab", visible: false, Show: true},
         {id: 6, name: "JSON视图", class: "ag-tab", visible: false, Show: true},
-        {id: 7, name: "WebSocket", class: "ag-tab", visible: false, Show: true}
+        {id: 7, name: "WebSocket", class: "ag-tab", visible: false, Show: true},
+        {id: 8, name: "图片视图", class: "ag-tab", visible: false, Show: true}
       ],
       TCPTabs: [
         {id: 0, name: "TCP请求数据流", class: "ag-tab ag-tab-selected", visible: false, Show: true},
@@ -184,6 +194,7 @@ export default {
       DisplayHTTPHeaderWebSocket: false,
       DisplayHTTPHeader: true,
       HexViewRaw: null,
+      isBreak: false,
     };
   },
   methods: {
@@ -227,9 +238,14 @@ export default {
       }
     },
     UpdateData(response, Break) {
+      this.$refs.RawText.SetSaveTextUpdate(false)
       if (window.vm.List.agSelectedLine === null) {
         return
       }
+      this.isBreak = false;
+      this.$nextTick(() => {
+        this.isBreak = true;
+      })
       this.SetHTTPPagesShow("WebSocket", window.vm.List.agSelectedLine.data["响应类型"].toUpperCase() === "WEBSOCKET")
       this.readOnly = Break !== 1
       {
@@ -253,6 +269,8 @@ export default {
       this.$refs.WebSocket.MenuItems[2].selected = response.Options.StopSend
       this.$refs.WebSocket.MenuItems[3].selected = response.Options.StopRec
       this.$refs.WebSocket.MenuItems[4].selected = response.Options.StopALL
+      this.HTTPTabs[8].Show = false
+      this.$refs.Img.SetImg("", "")
       this.SetHTTPPagesShow("Cookies", false)
       let language = "plaintext"
       let Body = Base64DecodeUint8(response.Body)
@@ -272,6 +290,17 @@ export default {
           const ar = (value + "/").replaceAll(";", "/").split("/")
           if (ar.length >= 2) {
             language = ar[1].toLowerCase()
+          }
+          if (ar[0] === "image") {
+            this.$refs.Img.SetImg(response.Body, language, 1)
+            this.HTTPTabs[8].Show = true;
+          } else if (ar.length >= 3 && ar[0] === "multipart" && ar[1] === "form-data" && ar[2].toLowerCase().indexOf("boundary") !== -1) {
+            CallGoDo("获取请求图片", {
+              Theology: this.RequestTheology,
+            }).then(Args => {
+              this.$refs.Img.SetImg(Args.Body, Args.Type, 2)
+              this.HTTPTabs[8].Show = true;
+            })
           }
         }
       }
@@ -319,15 +348,13 @@ export default {
         this.HTTPTabs[3].Show.BodyArgs = false
         this.HTTPTabs[3].Show.Index = 0
         try {
+          this.$refs.Json.SetReadOnly(this.readOnly)
+          this.$refs.Json.SetCode(Body)
           const json = JSON.parse(_Body);
+
           if (typeof json === 'object' && json !== null) {
             this.$refs.RawText.SetLanguage("json")
             language = "json"
-            //JSON视图
-            {
-              this.$refs.Json.SetReadOnly(this.readOnly)
-              this.$refs.Json.SetCode(Body)
-            }
           } else {
             this.$refs.RawText.SetLanguage(language)
           }
@@ -340,7 +367,7 @@ export default {
           this.SetHTTPPagesShow("JSON视图", false)
         } else if (language !== "json") {
           this.HTTPTabs[3].Show.Text = true
-          this.SetHTTPPagesShow("JSON视图", false)
+          this.SetHTTPPagesShow("JSON视图", true)
           this.$refs.BodyArgs.Empty()
           const array = _Body.split("&")
           let ok = false

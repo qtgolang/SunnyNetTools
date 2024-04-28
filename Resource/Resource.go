@@ -18,7 +18,17 @@ var GoCode []byte
 //go:embed BuiltFunc.txt
 var GoBuiltFuncCode []byte
 
-//go:embed ScriptTemplate/*
+//go:embed ScriptTemplate/_aes-des.goc
+//go:embed ScriptTemplate/_forward.goc
+//go:embed ScriptTemplate/_header.goc
+//go:embed ScriptTemplate/_quickResponse.goc
+//go:embed ScriptTemplate/_ReplaceUrlParameter.goc
+//go:embed ScriptTemplate/_response.goc
+//go:embed ScriptTemplate/_responseFile.goc
+//go:embed ScriptTemplate/_rsa.goc
+//go:embed ScriptTemplate/_pid.goc
+//go:embed ScriptTemplate/annotation.txt
+//go:embed ScriptTemplate/info.json
 var scriptTemplate embed.FS
 
 var ScriptTemplate []*ScriptTemplateInfo

@@ -22,6 +22,8 @@ import {AgGridVue} from '@ag-grid-community/vue3';
 import {ClipboardModule} from '@ag-grid-enterprise/clipboard';
 import {SetFilterModule} from '@ag-grid-enterprise/set-filter';
 import {ExcelExportModule} from '@ag-grid-enterprise/excel-export';
+import {ClipboardSetText} from "../../../wailsjs/runtime/runtime.js";
+import {ElMessage} from "element-plus";
 
 export default {
   props: ['readOnly'],
@@ -68,6 +70,7 @@ export default {
         getRowStyle: this.onGetRowStyle,
         onRowDataUpdated: this.NewColumnsLoaded,
         onModelUpdated: this.NewColumnsLoaded,
+        onCellDoubleClicked: this.onCellDoubleClicked,
         onCellValueChanged: (event) => {
           this.IsHasModify = true
         },
@@ -150,6 +153,13 @@ export default {
       this.agGridApi.setRowData(this.RowData);
       this.agSelectedLine = null
     },
+    onCellDoubleClicked(params) {
+      ClipboardSetText(params.value)
+      ElMessage({
+        message: "双击复制成功！",
+        type: 'success',
+      })
+    },
     onContextMenuItems() {
       let array = [];
       for (let i = 0; i < this.MenuItems.length; i++) {
@@ -196,7 +206,7 @@ export default {
           this.agGridApi.stopEditing(); // 退出单元格编辑
         }
       } catch (e) {
-        console.log(e)
+        //console.log(e)
       }
     },
   },

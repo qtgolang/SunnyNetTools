@@ -117,7 +117,9 @@ export default {
           name: '一键添加雷电模拟器相关',
           action: () => {
             this.AddProcessName("dnplayer.exe")
+            this.AddProcessName("LdBoxHeadless.exe")
             this.AddProcessName("LdVBoxHeadless.exe")
+            this.AddProcessName("Ld9BoxHeadless.exe")
           },
           disabled: false,
           visible: true

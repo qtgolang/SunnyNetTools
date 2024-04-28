@@ -212,11 +212,15 @@ export default {
   watch: {
     show(newValue) {
       if (newValue) {
+        this.thisWindowWidth = 1000
+        this.thisWindowHeight = 490
+        this.MaxSize = false
+        this.iconClass = ClassMaxName
         window.SetUILevel(WindowName)
         const h = document.documentElement.clientHeight
         const w = document.documentElement.clientWidth
         let _top = h - this.thisWindowHeight
-        if (_top < 0) {
+        if (_top <= 60) {
           _top = 0
         } else {
           _top = _top / 2
@@ -303,7 +307,7 @@ export default {
     RequestCertificate,
     Replace,
     MustList,
-    List, Agent, MustTCP, SSL, BasicSettings, ListColorConfig,  SettingsJavaScriptEdit
+    List, Agent, MustTCP, SSL, BasicSettings, ListColorConfig, SettingsJavaScriptEdit
   },
   computed: {
     IsWindows() {
@@ -658,35 +662,6 @@ export default {
       this.HeaderClickPosition.width = pxToInt(this.$refs.Window.style.width)
       this.HeaderClickPosition.height = pxToInt(this.$refs.Window.style.height)
     },
-    SettingsButtonClick(event) {
-      for (let key in this.Show) {
-        this.Show[key] = false
-      }
-      this.Show[event.index] = true
-      if (this.Show.Settings) {
-        this.Title = "常规设置"
-      } else if (this.Show.SSL) {
-        this.Title = "SSL证书配置"
-      } else if (this.Show.gateway) {
-        this.Title = "上游网关设置"
-      } else if (this.Show.host) {
-        this.Title = "Hosts设置"
-      } else if (this.Show.replace) {
-        this.Title = "替换操作设置"
-      } else if (this.Show.script) {
-        this.Title = "脚本代码编辑"
-        CallGoDo("获取脚本代码", null).then(res => {
-          this.$refs.GoJavaScriptEdit.SetCode(Base64DecodeStr(res))
-        })
-      } else if (this.Show.process) {
-        this.Title = "进程拦截设置"
-      } else if (this.Show.certificate) {
-        this.Title = "请求证书设置"
-      } else if (this.Show.color) {
-        this.Title = "列表颜色配置"
-        this.$refs.colorConfig.Load()
-      }
-    }
   },
 
 }

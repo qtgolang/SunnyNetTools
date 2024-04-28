@@ -6,7 +6,6 @@ import (
 	"changeme/MapHash"
 	"compress/flate"
 	"compress/gzip"
-	"encoding/base64"
 	"fmt"
 	"github.com/andybalholm/brotli"
 	"github.com/qtgolang/SunnyNet/SunnyNet"
@@ -45,13 +44,6 @@ func SaveData(args *JSON.SyJson) any {
 			CallJs("弹出错误提示", "保存配置失败:"+e.Error())
 		}
 		return true
-	case "列数据":
-		code, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(Data, "\\\\", "\\"))
-		_TmpLock.Lock()
-		GlobalConfig.Columns = string(code)
-		_ = GlobalConfig.saveToFile()
-		_TmpLock.Unlock()
-		return true
 	}
 	return true
 }
@@ -67,6 +59,7 @@ type ListInfo struct {
 	Method    string `json:"方式"`        //方式
 	Ico       string `json:"ico"`       //显示图标
 	Len       string `json:"响应长度"`      //显示图标
+	Args      string `json:"参数"`        //参数?号后面部分
 	Type      string `json:"响应类型"`      //显示图标
 	SendTime  string `json:"请求时间"`      //显示图标
 	RecTime   string `json:"响应时间"`      //显示图标
@@ -77,6 +70,7 @@ type ListInfo struct {
 	} `json:"color"` //显示图标
 	Break uint8 `json:"断点模式"`
 }
+
 type UpdateCurrentResponse struct {
 	Theology  int         `json:"Theology"` //唯一ID
 	Header    http.Header `json:"Header"`
@@ -238,15 +232,20 @@ func UpdateIco(conn *MapHash.Request, _ContentType string) string {
 	return "generic"
 }
 func HttpCallback(Conn *SunnyNet.HttpConn) {
+	if Conn.Request == nil {
+		return
+	}
+	if Conn.Request.URL == nil {
+		return
+	}
+	if Conn.Request.Header == nil {
+		return
+	}
 	SunnyNetMode := 0
 	{
 		if Conn.Type == public.HttpSendRequest {
-			if Conn.Request != nil {
-				if Conn.Request.Header != nil {
-					SunnyNetMode, _ = strconv.Atoi(Conn.Request.Header.Get("SunnyNetMode"))
-					Conn.Request.Header.Del("SunnyNetMode")
-				}
-			}
+			SunnyNetMode, _ = strconv.Atoi(Conn.Request.Header.Get("SunnyNetMode"))
+			Conn.Request.Header.Del("SunnyNetMode")
 			HostsRulesUrl(Conn.Request.URL)
 			u, b := ReplaceURL(Conn.Request.URL)
 			if len(b) > 0 {
@@ -263,12 +262,14 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				Conn.Request.URL = u
 				ReplaceHeader(Conn.Request.Header)
 				{
-					_TmpLock.Lock()
-					if DisableCache {
-						delete(Conn.Request.Header, "If-None-Match")
-						delete(Conn.Request.Header, "If-Modified-Since")
+					if Conn.Request.Header != nil {
+						_TmpLock.Lock()
+						if DisableCache {
+							delete(Conn.Request.Header, "If-None-Match")
+							delete(Conn.Request.Header, "If-Modified-Since")
+						}
+						_TmpLock.Unlock()
 					}
-					_TmpLock.Unlock()
 				}
 				Body := make([]byte, 0)
 				if Conn.Request.Body != nil {
@@ -278,16 +279,68 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				Body = ReplaceBody(Body)
 				Conn.Request.Body = io.NopCloser(bytes.NewBuffer(Body))
 			}
+
 		} else if Conn.Type == public.HttpResponseOK {
-			ReplaceHeader(Conn.Response.Header)
 			{
-				_TmpLock.Lock()
-				if DisableCache {
-					Conn.Response.Header["Cache-Control"] = []string{"no-cache, no-store, must-revalidate"}
-					Conn.Response.Header["Pragma"] = []string{"no-cache"}
-					Conn.Response.Header["Expires"] = []string{"0"}
+				if Conn.Response.Header != nil {
+					_TmpLock.Lock()
+					if DisableCache {
+						Conn.Response.Header["Cache-Control"] = []string{"no-cache, no-store, must-revalidate"}
+						Conn.Response.Header["Pragma"] = []string{"no-cache"}
+						Conn.Response.Header["Expires"] = []string{"0"}
+					}
+					_TmpLock.Unlock()
 				}
-				_TmpLock.Unlock()
+			}
+			ReplaceHeader(Conn.Response.Header)
+			if Conn.Response.Header != nil {
+				if Conn.Response.Body != nil {
+					Body, _ := io.ReadAll(Conn.Response.Body)
+					_ = Conn.Response.Body.Close()
+					Encoding := ""
+					ar := Conn.Response.Header["Content-Encoding"]
+					if len(ar) > 0 {
+						Encoding = ar[0]
+					} else {
+						ar = Conn.Response.Header["content-encoding"]
+						if len(ar) > 0 {
+							Encoding = ar[0]
+						}
+					}
+					Encoding = strings.ToLower(Encoding)
+					isOk := false
+					if Encoding == "gzip" {
+						gr, err := gzip.NewReader(io.NopCloser(bytes.NewBuffer(Body)))
+						if err == nil {
+							gr1, err1 := io.ReadAll(gr)
+							if err1 == nil {
+								Conn.Response.Body = io.NopCloser(bytes.NewBuffer(gr1))
+								isOk = true
+							}
+						}
+					} else if Encoding == "br" {
+						br, err := io.ReadAll(brotli.NewReader(io.NopCloser(bytes.NewBuffer(Body))))
+						if err == nil {
+							Conn.Response.Body = io.NopCloser(bytes.NewBuffer(br))
+							isOk = true
+						}
+					} else if Encoding == "deflate" {
+						zr := flate.NewReader(io.NopCloser(bytes.NewBuffer(Body)))
+						_ = zr.Close()
+						bx, err := io.ReadAll(zr)
+						if err == nil {
+							Conn.Response.Body = io.NopCloser(bytes.NewBuffer(bx))
+							isOk = true
+						}
+					}
+					if isOk {
+						delete(Conn.Response.Header, "content-encoding")
+						delete(Conn.Response.Header, "Content-Encoding")
+					} else {
+						Conn.Response.Body = io.NopCloser(bytes.NewBuffer(Body))
+					}
+				}
+				delete(Conn.Response.Header, "Transfer-Encoding")
 			}
 			Body := make([]byte, 0)
 			if Conn.Response.Body != nil {
@@ -298,24 +351,8 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 			Conn.Response.Body = io.NopCloser(bytes.NewBuffer(Body))
 		}
 		if !(GetWorkingState()) && Conn.Type == public.HttpSendRequest {
-			if Conn.Type == public.HttpSendRequest {
-				//执行发起请求脚本
-				RunHTTPRequestScriptCode(Conn)
-			} else if Conn.Type == public.HttpSendRequest {
-				//执行请求响应脚本
-				RunHTTPResponseScriptCode(Conn)
-				h := HashMap.GetRequest(Conn.Theology)
-				if h != nil {
-					h.Conn = nil
-				}
-			} else {
-				//执行请求错误脚本
-				RunHTTPErrorScriptCode(Conn)
-				h := HashMap.GetRequest(Conn.Theology)
-				if h != nil {
-					h.Conn = nil
-				}
-			}
+			//执行发起请求脚本
+			RunHTTPRequestScriptCode(Conn)
 			return
 		}
 	}
@@ -333,6 +370,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				h.RecTime = time.Now().Format("15:04:05.000")
 				AddInsertList(&ListInfo{
 					MessageId: -1,
+					Args:      Conn.Request.URL.RawQuery,
 					URL:       Conn.Request.URL.String(),
 					HOST:      Conn.Request.URL.Host,
 					ClientIP:  Conn.ClientIP,
@@ -382,6 +420,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				_tmp := &ListInfo{
 					MessageId: -1,
 					URL:       Conn.Request.URL.String(),
+					Args:      Conn.Request.URL.RawQuery,
 					HOST:      Conn.Request.URL.Host,
 					ClientIP:  Conn.ClientIP,
 					PID:       CommAnd.GetPidName(Conn.PID),
@@ -408,6 +447,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 			_tmp := &ListInfo{
 				MessageId: -1,
 				URL:       Conn.Request.URL.String(),
+				Args:      Conn.Request.URL.RawQuery,
 				HOST:      Conn.Request.URL.Host,
 				ClientIP:  Conn.ClientIP,
 				PID:       CommAnd.GetPidName(Conn.PID),
@@ -447,6 +487,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				_tmp = &ListInfo{
 					MessageId: -1,
 					URL:       Conn.Request.URL.String(),
+					Args:      Conn.Request.URL.RawQuery,
 					HOST:      Conn.Request.URL.Host,
 					ClientIP:  Conn.ClientIP,
 					PID:       CommAnd.GetPidName(Conn.PID),
@@ -464,55 +505,6 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 			}
 		}
 	} else if Conn.Type == public.HttpResponseOK {
-		if Conn.Response.Header != nil {
-			if Conn.Response.Body != nil {
-				Body, _ := io.ReadAll(Conn.Response.Body)
-				_ = Conn.Response.Body.Close()
-				Encoding := ""
-				ar := Conn.Response.Header["Content-Encoding"]
-				if len(ar) > 0 {
-					Encoding = ar[0]
-				} else {
-					ar = Conn.Response.Header["content-encoding"]
-					if len(ar) > 0 {
-						Encoding = ar[0]
-					}
-				}
-				Encoding = strings.ToLower(Encoding)
-				isOk := false
-				if Encoding == "gzip" {
-					gr, err := gzip.NewReader(io.NopCloser(bytes.NewBuffer(Body)))
-					if err == nil {
-						gr1, err1 := io.ReadAll(gr)
-						if err1 == nil {
-							Conn.Response.Body = io.NopCloser(bytes.NewBuffer(gr1))
-							isOk = true
-						}
-					}
-				} else if Encoding == "br" {
-					br, err := io.ReadAll(brotli.NewReader(io.NopCloser(bytes.NewBuffer(Body))))
-					if err == nil {
-						Conn.Response.Body = io.NopCloser(bytes.NewBuffer(br))
-						isOk = true
-					}
-				} else if Encoding == "deflate" {
-					zr := flate.NewReader(io.NopCloser(bytes.NewBuffer(Body)))
-					_ = zr.Close()
-					bx, err := io.ReadAll(zr)
-					if err == nil {
-						Conn.Response.Body = io.NopCloser(bytes.NewBuffer(bx))
-						isOk = true
-					}
-				}
-				if isOk {
-					delete(Conn.Response.Header, "content-encoding")
-					delete(Conn.Response.Header, "Content-Encoding")
-				} else {
-					Conn.Response.Body = io.NopCloser(bytes.NewBuffer(Body))
-				}
-			}
-			delete(Conn.Response.Header, "Transfer-Encoding")
-		}
 		Break := RunHTTPResponseScriptCode(Conn)
 		Insert.Lock()
 		isUpdateRequestInfo := currentlySelected == Conn.Theology
@@ -539,7 +531,6 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 				Break:     IsBreak == 2,
 				Error:     false,
 			})
-
 		}
 		Insert.Lock()
 		ResponseType := ""
@@ -562,6 +553,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 		}
 		_tmp := &ListInfo{
 			MessageId: -1,
+			Args:      Conn.Request.URL.RawQuery,
 			URL:       Conn.Request.URL.String(),
 			HOST:      Conn.Request.URL.Host,
 			ClientIP:  Conn.ClientIP,
@@ -583,6 +575,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 			h.Break = 0
 			_tmp = &ListInfo{
 				MessageId: -1,
+				Args:      Conn.Request.URL.RawQuery,
 				URL:       Conn.Request.URL.String(),
 				HOST:      Conn.Request.URL.Host,
 				ClientIP:  Conn.ClientIP,
@@ -626,6 +619,7 @@ func HttpCallback(Conn *SunnyNet.HttpConn) {
 		Insert.Lock()
 		_tmp := &ListInfo{
 			MessageId: -1,
+			Args:      Conn.Request.URL.RawQuery,
 			URL:       Conn.Request.URL.String(),
 			HOST:      Conn.Request.URL.Host,
 			ClientIP:  Conn.ClientIP,
@@ -665,6 +659,7 @@ func WSCallback(Conn *SunnyNet.WsConn) {
 		Insert.Lock()
 		_tmp := &ListInfo{
 			MessageId: -1,
+			Args:      Conn.Request.URL.RawQuery,
 			URL:       Conn.Request.URL.String(),
 			HOST:      Conn.Request.URL.Host,
 			ClientIP:  Conn.ClientIP,
@@ -685,6 +680,7 @@ func WSCallback(Conn *SunnyNet.WsConn) {
 		h.RecTime = time.Now().Format("15:04:05.000")
 		_tmp := &ListInfo{
 			MessageId: -1,
+			Args:      Conn.Request.URL.RawQuery,
 			URL:       Conn.Request.URL.String(),
 			HOST:      Conn.Request.URL.Host,
 			ClientIP:  Conn.ClientIP,

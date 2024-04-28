@@ -10,6 +10,11 @@
     "FileName": "_header.goc"
   },
   {
+    "Name": "对指定请求设置代理",
+    "Explain": "通过判断pid来对进程设置代理IP",
+    "FileName": "_pid.goc"
+  },
+  {
     "Name": "HTTP->修改响应Json 示例代码",
     "Explain": "【HTTP响应】 修改响应的JSON字符串",
     "FileName": "_response.goc"

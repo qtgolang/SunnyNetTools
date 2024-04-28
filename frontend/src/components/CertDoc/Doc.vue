@@ -100,6 +100,10 @@ export default {
   watch: {
     show(newValue) {
       if (newValue) {
+        this.thisWindowWidth = 1000
+        this.thisWindowHeight = 490
+        this.MaxSize = false
+        this.iconClass = ClassMaxName
         window.SetUILevel(WindowName)
         const h = document.documentElement.clientHeight
         const w = document.documentElement.clientWidth

@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -36,7 +37,8 @@ func SetWorkingState(open bool) {
 func GetWorkingState() bool {
 	workLock.RLock()
 	defer workLock.RUnlock()
-	return startWork
+	A := startWork
+	return A
 }
 
 func event(command string, args *JSON.SyJson) any {
@@ -64,6 +66,12 @@ func event(command string, args *JSON.SyJson) any {
 	case "全部放行":
 		HashMap.ReleaseAll()
 		return true
+	case "置剪辑版文本":
+		b, e := base64.StdEncoding.DecodeString(args.GetData("Data"))
+		if e != nil {
+			return e
+		}
+		return ClipboardText(string(b))
 	case "创建请求代码":
 		var TheologyArray []int
 		Lang := args.GetData("Lang")
@@ -72,8 +80,12 @@ func event(command string, args *JSON.SyJson) any {
 			TheologyArray = append(TheologyArray, getInt(args.GetData("Data["+strconv.Itoa(i)+"]")))
 		}
 		Code := CreateRequestCode(TheologyArray, Lang, Module)
-		_ = runtime.ClipboardSetText(app.ctx, Code)
-		CallJs("弹出成功信息", "请求代码已生成到剪辑版")
+		er := ClipboardText(Code)
+		if er == nil {
+			CallJs("弹出成功信息", "请求代码已复制到剪辑版")
+		} else {
+			CallJs("弹出成功信息", "请求代码复制到剪辑版失败:"+er.Error())
+		}
 		return true
 	case "保存文件":
 		var TheologyArray []int
@@ -110,8 +122,6 @@ func event(command string, args *JSON.SyJson) any {
 			}
 		}
 		max := strconv.Itoa(len(OpenData))
-		xh := OpenData[len(OpenData)-1]
-		fmt.Println(xh)
 		SetStatusText("正在导入记录:0/" + max)
 		var OpenFileListInfo []ListInfo
 		for index, v := range OpenData {
@@ -258,7 +268,7 @@ func event(command string, args *JSON.SyJson) any {
 				Pattern:     args.GetData("Filters[" + strconv.Itoa(i) + "].Pattern"),
 			})
 		}
-		res, _ := runtime.OpenFileDialog(app.ctx, runtime.OpenDialogOptions{
+		res, ERR := runtime.OpenFileDialog(app.ctx, runtime.OpenDialogOptions{
 			DefaultDirectory:           DefaultDirectory,
 			Title:                      _Title,
 			Filters:                    _Filters,
@@ -267,6 +277,12 @@ func event(command string, args *JSON.SyJson) any {
 			ResolvesAliases:            true,
 			TreatPackagesAsDirectories: false,
 		})
+		if ERR != nil {
+			CallJs("弹出错误提示", "ERR:"+ERR.Error())
+		}
+		if res != "" {
+			CommAnd.UserSelectPath = filepath.Dir(res)
+		}
 		return res
 	case "保存文件对话框":
 		DefaultDirectory, _ := CommAnd.GetDesktopPath()
@@ -286,6 +302,9 @@ func event(command string, args *JSON.SyJson) any {
 			CanCreateDirectories:       true,
 			TreatPackagesAsDirectories: false,
 		})
+		if res != "" {
+			CommAnd.UserSelectPath = filepath.Dir(res)
+		}
 		return res
 	case "取消搜索颜色标记":
 		return CancelSearch()
@@ -301,6 +320,7 @@ func event(command string, args *JSON.SyJson) any {
 		return obj.Find()
 	//主界面的关闭按钮点击
 	case "CloseWindow":
+		ColumnsData, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(args.GetData("StorageColumns"), "\\\\", "\\"))
 		w, h := runtime.WindowGetSize(app.ctx)
 		runtime.Hide(app.ctx)
 		code, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(args.GetData("Filter"), "\\\\", "\\"))
@@ -310,6 +330,7 @@ func event(command string, args *JSON.SyJson) any {
 		GlobalConfig.Size.Width = w
 		GlobalConfig.Size.Height = h
 		GlobalConfig.KeysStrings = string(KeysStrings)
+		GlobalConfig.Columns = string(ColumnsData)
 		_ = GlobalConfig.saveToFile()
 		_TmpLock.Unlock()
 		app.App.SetIeProxy(true)
@@ -487,6 +508,17 @@ func event(command string, args *JSON.SyJson) any {
 		GlobalConfig = _GlobalConfig
 		configLock.Unlock()
 		CallJs("加载配置", GlobalConfig)
+
+		app.App.Close()
+		app.App.SetPort(GlobalConfig.Port)
+		app.App.Start()
+		if app.App.Error == nil {
+			CallJs("启动状态", "")
+		} else {
+			Err := base64.StdEncoding.EncodeToString([]byte(app.App.Error.Error()))
+			CallJs("启动状态", Err)
+		}
+		_ = GlobalConfig.saveToFile()
 		CallJs("弹出成功提示", "所有配置已重置！")
 		return true
 	case "获取脚本代码":
@@ -549,7 +581,7 @@ func event(command string, args *JSON.SyJson) any {
 				return false
 			}
 			a := h.SocketData[SelectedID].Body
-			err := runtime.ClipboardSetText(app.ctx, fmt.Sprintf("% X", a))
+			err := ClipboardText(fmt.Sprintf("% X", a))
 			if err == nil {
 				CallJs("弹出成功提示", "当前选择的HEX数据,已复制到剪辑版")
 			} else {
@@ -577,7 +609,7 @@ func event(command string, args *JSON.SyJson) any {
 				CallJs("弹出错误提示", "复制失败:无数据")
 				return false
 			}
-			err := runtime.ClipboardSetText(app.ctx, str)
+			err := ClipboardText(str)
 			if err == nil {
 				CallJs("弹出成功提示", "当前请求的全部数据,已复制到剪辑版")
 			} else {
@@ -603,7 +635,7 @@ func event(command string, args *JSON.SyJson) any {
 				CallJs("弹出错误提示", "复制失败:无数据")
 				return false
 			}
-			err := runtime.ClipboardSetText(app.ctx, str)
+			err := ClipboardText(str)
 			if err == nil {
 				CallJs("弹出成功提示", "当前请求的所有发送数据,已复制到剪辑版")
 			} else {
@@ -629,7 +661,7 @@ func event(command string, args *JSON.SyJson) any {
 				CallJs("弹出错误提示", "复制失败:无数据")
 				return false
 			}
-			err := runtime.ClipboardSetText(app.ctx, str)
+			err := ClipboardText(str)
 			if err == nil {
 				CallJs("弹出成功提示", "当前请求的所有接收数据,已复制到剪辑版")
 			} else {
@@ -788,18 +820,43 @@ func event(command string, args *JSON.SyJson) any {
 		}
 		fmt.Println(Theology, IsWs, IsTCP, wsType, SendType, direction, Data)
 		return nil
-	case "保存响应图片":
+	case "获取请求图片":
 		Theology := getInt(args.GetData("Theology"))
 		h := HashMap.GetRequest(Theology)
 		if h != nil {
+			return h.GetRequestImg()
+		}
+		return nil
+	case "保存响应图片":
+		Theology := getInt(args.GetData("Theology"))
+		IsRequest := getInt(args.GetData("IsRequest"))
+		h := HashMap.GetRequest(Theology)
+		if h != nil {
+			hm := make([]byte, 0)
+			if IsRequest == 2 {
+				_t := h.GetRequestImg()
+				if _t != nil {
+					hm, _ = base64.StdEncoding.DecodeString(_t.Body)
+				}
+				if len(hm) < 1 {
+					CallJs("弹出错误提示", "获取图片消息失败")
+					return false
+				}
+			}
 			_path, err := CommAnd.GetDesktopPath()
 			if _path == "" {
-				CallJs("弹出错误提示", "获取桌面路径失败:"+err.Error())
+				CallJs("弹出错误提示", "获取指定路径失败:"+err.Error())
 				return false
 			}
 			timestamp10 := strconv.FormatInt(time.Now().Unix(), 10)
 			_path = strings.ReplaceAll(_path+"/"+timestamp10+"."+args.GetData("type"), "\\", "/")
-			err = os.WriteFile(_path, h.Response.Body, 777)
+			if IsRequest == 1 {
+				err = os.WriteFile(_path, h.Body, 777)
+			} else if IsRequest == 2 {
+				err = os.WriteFile(_path, hm, 777)
+			} else {
+				err = os.WriteFile(_path, h.Response.Body, 777)
+			}
 			if err != nil {
 				CallJs("弹出错误提示", "写入文件时出错:"+err.Error())
 				return false
@@ -855,7 +912,7 @@ func event(command string, args *JSON.SyJson) any {
 						return false
 					}
 					header := make(http.Header)
-					for i := 1; i < len(array1)-1; i++ {
+					for i := 1; i < len(array1); i++ {
 						array2 = strings.Split(array1[i], ":")
 						name := ""
 						value := ""
@@ -1035,7 +1092,7 @@ func event(command string, args *JSON.SyJson) any {
 					h.Response.StateCode, _ = strconv.Atoi(array1[1])
 
 					h.Response.Header = make(http.Header)
-					for i := 1; i < len(array2)-1; i++ {
+					for i := 1; i < len(array2); i++ {
 						array1 = strings.Split(array2[i], ":")
 						if len(array1) >= 1 {
 							name := array1[0]
@@ -1231,7 +1288,7 @@ func event(command string, args *JSON.SyJson) any {
 		path1 := path + "/" + fileName + ".cer"
 		path2 := path + "/" + fileName + ".key"
 		if e != nil {
-			CallJs("弹出错误提示", "创建证书失败:没有获取到桌面路径")
+			CallJs("弹出错误提示", "创建证书失败:没有获取到指定路径")
 			return false
 		}
 		_ = os.Remove(path1)
@@ -1240,15 +1297,15 @@ func event(command string, args *JSON.SyJson) any {
 		key := Api.ExportKEY(id)
 		e = os.WriteFile(path1, []byte(ca), 777)
 		if e != nil {
-			CallJs("弹出错误提示", "创建证书失败:出错CA文件到桌面失败")
+			CallJs("弹出错误提示", "创建证书失败:出错CA文件到指定路径失败")
 			return false
 		}
 		e = os.WriteFile(path2, []byte(key), 777)
 		if e != nil {
-			CallJs("弹出错误提示", "创建证书失败:出错KEY文件到桌面失败")
+			CallJs("弹出错误提示", "创建证书失败:出错KEY文件到指定路径失败")
 			return false
 		}
-		CallJsAlert("创建证书成功：已储存在桌面", "储存文件路径:\n\tCA文件: "+path1+"\n\n\tKEY文件: "+path2)
+		CallJsAlert("创建证书成功：已储存在指定路径", "储存文件路径:\n\tCA文件: "+path1+"\n\n\tKEY文件: "+path2)
 		return true
 	case "安装CA证书":
 		CaFilePath := args.GetData("CaFilePath")
@@ -1303,13 +1360,24 @@ func event(command string, args *JSON.SyJson) any {
 	case "安装默认证书":
 		CallJsAlert("安装结果：", CommAnd.InstallCert([]byte(public.RootCa)))
 		return ""
-	case "保存默认证书到桌面":
-		path, e := CommAnd.GetDesktopPath()
+	case "导出默认证书":
+		A, _ := os.Getwd()
+		var FileFilter []runtime.FileFilter
+		FileFilter = []runtime.FileFilter{
+			{DisplayName: "*.cer证书文件", Pattern: "*.cer"},
+		}
+		path, e := runtime.SaveFileDialog(app.ctx, runtime.SaveDialogOptions{DefaultDirectory: A,
+			DefaultFilename: "SunnyNet.cer",
+			Title:           "导出默认证书",
+			Filters:         FileFilter})
 		if e != nil {
-			CallJs("弹出错误提示", "未能获取到桌面路径！！")
+			CallJs("弹出错误提示", "未能获取到指定路径！！")
 			return false
 		}
-		path1 := path + "/SunnyNet.cer"
+		path1 := path
+		if !strings.HasSuffix(strings.ToLower(path), ".cer") {
+			path1 += ".cer"
+		}
 		_ = os.Remove(path1)
 		if os.WriteFile(path1, []byte(public.RootCa), 777) == nil {
 			CallJs("弹出成功提示", "保存默认证书文件成功")

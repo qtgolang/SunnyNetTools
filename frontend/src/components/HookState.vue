@@ -12,7 +12,7 @@
 <script>
 import {GetImage} from "./image.js";
 import {CallGoDo} from "./CallbackEventsOn.js";
-
+window.isHideHook = false;
 export default {
   data() {
     return {
@@ -27,10 +27,12 @@ export default {
       this.Title = this.state ? "正在捕获" : "隐藏捕获"
       if (this.state) {
         document.getElementById("HookMessageText").innerText = "还没有捕获到数据"
+        window.isHideHook = false;
       } else {
         document.getElementById("HookMessageText").innerText = "您隐藏了捕获数据"
+        window.isHideHook = true;
       }
-      CallGoDo("工作状态",{State: this.state})
+      CallGoDo("工作状态", {State: this.state})
     }
   }
 }

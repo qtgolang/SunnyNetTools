@@ -18,6 +18,7 @@ window.vm = {
   Settings: null,
   OpenSourceProtocol: null,
   Doc: null,
+  CloseWindow: null,
   IEProxy: null,
 }
 window.VsCodeEdit = {JavaScriptEdit: false}

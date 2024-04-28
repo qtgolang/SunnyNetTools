@@ -13,7 +13,7 @@ import ToolPanel from './ToolPanel.vue';
 import FindWindow from './Find/FindWindow.vue';
 import AgHeaderGroup from './Header.vue';
 import AgFooterGroup from './Footer.vue';
-import {CallGoDo, deepCopy, SetTextColor, StrBase64Encode} from "./CallbackEventsOn.js";
+import {CallGoDo, deepCopy, SetTextColor} from "./CallbackEventsOn.js";
 import {ClipboardSetText} from "../../wailsjs/runtime/runtime.js";
 import {ElMessage} from "element-plus";
 
@@ -31,12 +31,14 @@ window.UI = reactive({
     TextCompare: 0,
     FindWindow: 0,
     DocCompare: 0,
+    CloseWindow: 0,
     OpenSourceProtocol: 0,
   },
   Settings: false,
   TextCompare: false,
   FindWindow: false,
   DocCompare: false,
+  CloseWindow: false,
   OpenSourceProtocol: false
 });
 window.Size = reactive({
@@ -114,6 +116,7 @@ export default {
           minWidth: 80,
           width: 80,
           maxWidth: 100,
+          sortable: true,
           menuTabs: [], // 不显示过滤器
           cellRenderer: 'imageRenderer', cellStyle: {'text-align': 'left'},
         },
@@ -132,6 +135,10 @@ export default {
         {
           field: "HOST", width: 120, minWidth: 120, tooltipField: 'HOST', hide: true,
           maxWidth: 500, cellStyle: {'text-align': 'left'}
+        },
+        {
+          field: "Query", width: 200, minWidth: 200, tooltipField: 'Query', hide: true,
+          maxWidth: 2000, cellStyle: {'text-align': 'left'}
         },
         {
           field: "请求地址", width: 200, minWidth: 200, tooltipField: '请求地址',
@@ -158,6 +165,10 @@ export default {
           maxWidth: 150, cellStyle: {'text-align': 'left'}
         },
         {
+          field: "参数", width: 150, minWidth: 150, tooltipField: '参数', hide: true,
+          maxWidth: 2000, cellStyle: {'text-align': 'left'}
+        },
+        {
           field: "注释", width: 200, minWidth: 200, tooltipField: '注释', editable: true,
           maxWidth: 2000, cellStyle: {'text-align': 'left'}
         },
@@ -168,7 +179,7 @@ export default {
       ],
       sideBar: null,
       //是否跟随显示
-      ListFollowShow: true,
+      ListFollowShow: false,
       PageWidth: {
         Width: 0,
         min: 0,
@@ -252,6 +263,21 @@ export default {
                   name: 'E2EE网站客户端',
                   action: () => {
                     this.GenerateRequestCode("E", 'e2ee')
+                  },
+                  disabled: false,
+                  visible: true
+                }
+              ],
+            },
+            {
+              name: '火山',
+              disabled: false,
+              visible: true,
+              subMenu: [
+                {
+                  name: 'WinHttpW',
+                  action: () => {
+                    this.GenerateRequestCode("火山", 'WinHttpW')
                   },
                   disabled: false,
                   visible: true
@@ -551,7 +577,18 @@ export default {
       return null
     }
     ,
+    RefreshColumns(Columns) {
+      this.$nextTick(() => {
+        console.log(Columns);
+        window.vm.List.$refs.agGrid.gridOptions.columnApi.applyColumnState({
+          state: Columns,
+          applyOrder: true,
+        });
+      })
+    }
+    ,
     handleMouseMove(event) {
+      return;
       try {
         const tools = this.getTools()
         if (tools != null) {
@@ -759,24 +796,25 @@ export default {
     }
     ,
     onColumnChange(event) {
-      const GridColumns = this.$refs.agGrid.gridOptions.columnApi.getAllGridColumns()
-      let Columns = []
-      for (let i = 0; i < GridColumns.length; i++) {
-        const m = GridColumns[i]
-        const colDef = m.colDef
-        let Column = {
-          field: colDef.field, tooltipField: colDef.tooltipField,
-          minWidth: colDef.minWidth,
-          width: m.actualWidth,
-          maxWidth: colDef.maxWidth,
-          menuTabs: colDef.menuTabs,
-          cellRenderer: colDef.cellRenderer, cellStyle: colDef.cellStyle,
-          hide: !m.visible,
+      if (event.type === "columnVisible") {
+        let key = event.column.colId;
+        if (event.visible === false) {
+          const filterModel = window.vm.List.agGridApi.getFilterModel();
+          for (const colId in filterModel) {
+            if (colId === key) {
+              window.vmFilterTemp[key] = filterModel[colId];
+              break
+            }
+          }
+          const responseTypeFilter = this.agGridApi.getFilterInstance(key);
+          responseTypeFilter.setModel(null);
+        } else {
+          const responseTypeFilter = this.agGridApi.getFilterInstance(key);
+          responseTypeFilter.setModel(window.vmFilterTemp[key]);
         }
-        Columns[i] = Column
+        window.vm.List.agGridApi.onFilterChanged();
       }
-      const ColumnsObjs = StrBase64Encode(JSON.stringify(Columns))
-      CallGoDo("保存配置", {Type: "列数据", Data: ColumnsObjs})
+
     }
     ,
     GenerateRequestCode(Lang, module) {
@@ -984,6 +1022,7 @@ export default {
   }
   ,
   mounted() {
+    window.vm.List = this
     this.agGridApi = this.$refs.agGrid.gridOptions.api
     //this.HideToolsPanel();
     window.ToolsMaximize = false
@@ -1024,7 +1063,6 @@ export default {
     window.addEventListener('keydown', this.handleKeyDown);
     //删除 ：root 下的 --el-menu-bg-color 样式
     document.documentElement.style.setProperty('--el-menu-bg-color', 'unset');
-    window.vm.List = this
     this.$nextTick(() => {
       {
         const obj1 = this.$refs.agGrid.$el.childNodes

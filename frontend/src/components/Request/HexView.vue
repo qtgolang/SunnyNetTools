@@ -812,6 +812,9 @@ export default {
         if (ev === null || ev === void 0) {
           break
         }
+        if (ev === this.$refs.menu) {
+          return
+        }
         if (ev === this.$refs.myHexDiv) {
           Bool = true
           break

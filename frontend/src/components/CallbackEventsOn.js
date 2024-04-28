@@ -8,6 +8,11 @@ export function Base64Encode(str) {
     return Base64.fromUint8Array(Uint8Array.from(StringToBytes(str)));
 }
 
+export async function ClipboardText(str) {
+    //还未测试
+    return await CallGoDo("置剪辑版文本", {Data: StrBase64Encode(str)});
+}
+
 export function StrBase64Encode(str) {
     const Encoder = new TextEncoder();
     return Base64.fromUint8Array(Uint8Array.from(Encoder.encode(str)));
@@ -156,6 +161,46 @@ export function UInt8ToStr(bs, LABEL) {
     return decoder.decode(bs);
 }
 
+export const Utf8CodingText = "GB2312编码显示"
+export const Gb2312CodingText = "UTF8编码显示"
+let AutoUtf8CodingText = Gb2312CodingText
+
+export function SetAutoUtf8CodingShow() {
+    if (AutoUtf8CodingText === Utf8CodingText) {
+        AutoUtf8CodingText = Gb2312CodingText;
+    } else {
+        AutoUtf8CodingText = Utf8CodingText;
+    }
+}
+
+export function SetCodingShow(Coding) {
+    if (Coding === Utf8CodingText) {
+        AutoUtf8CodingText = Gb2312CodingText;
+    } else if (Coding === Gb2312CodingText) {
+        AutoUtf8CodingText = Utf8CodingText;
+    }
+}
+
+export function AutoCodingGBK() {
+    return AutoUtf8CodingText !== Gb2312CodingText
+}
+
+export function AutoUtf8CodingShow(text, ys) {
+    let Str = text + "";
+    if (Str.indexOf(Utf8CodingText) !== -1) {
+        if (AutoUtf8CodingText !== Utf8CodingText) {
+            Str = Str.replaceAll(Utf8CodingText, Gb2312CodingText);
+            ys.innerHTML = Str;
+        }
+
+    } else if (Str.indexOf(Gb2312CodingText) !== -1) {
+        if (AutoUtf8CodingText !== Gb2312CodingText) {
+            Str = Str.replaceAll(Gb2312CodingText, Utf8CodingText);
+            ys.innerHTML = Str;
+        }
+    }
+}
+
 export async function protobufToJson(pb, skip) {
     return CallGoDo("protobufToJson", {Data: Base64.fromUint8Array(pb), skip: skip});
 }
@@ -246,6 +291,7 @@ export function deepCopy(obj) {
 window.WindowOpenURL = function (a) {
     BrowserOpenURL(a)
 }
+window.vmFilterTemp = {};
 
 export async function EventsDo(arg) {
     let Args = arg["Args"]
@@ -305,11 +351,28 @@ export async function EventsDo(arg) {
             }
             return
         case "插入列表":
+            if (window.isHideHook) {
+                return
+            }
             let array = []
             for (let i = 0; i < Args.length; i++) {
                 let obj = window.vm.List.RowDataHashMap[Args[i].Theology]
                 if (!obj) {
                     Args[i]["序号"] = (window.vm.List.index++) + 1
+                    let query = Args[i]["请求地址"]
+                    if (query.startsWith("https://") || query.startsWith("http://")) {
+                        let ar = query.split("/")
+                        if (ar.length > 2) {
+                            Args[i]["HOST"] = ar[2]
+                            query = query.replace("https://" + Args[i]["HOST"], "");
+                            query = query.replace("http://" + Args[i]["HOST"], "");
+                            Args[i]["Query"] = query
+                        } else {
+                            Args[i]["Query"] = ''
+                        }
+                    } else {
+                        Args[i]["Query"] = ''
+                    }
                     SetTextColor(Args[i])
                     array.push(Args[i])
                 }
@@ -325,6 +388,7 @@ export async function EventsDo(arg) {
                     //console.log(array)
                     //refreshCells(array)
                     setTimeout(() => {
+
                         window.vm.List.agGridApi.applyTransaction({add: []});
                     }, 500)
                 }
@@ -402,6 +466,14 @@ export async function EventsDo(arg) {
                     obj.data["响应长度"] = Args[i]["响应长度"]
                     obj.data["断点模式"] = Args[i]["断点模式"]
                     obj.data["请求地址"] = Args[i]["请求地址"]
+                    let query = obj.data["请求地址"]
+                    if (query.startsWith("https://") || query.startsWith("http://")) {
+                        query = query.replace("https://" + obj.data["HOST"], "");
+                        query = query.replace("http://" + obj.data["HOST"], "");
+                        obj.data["Query"] = query
+                    } else {
+                        obj.data["Query"] = ''
+                    }
                     obj.data["方式"] = Args[i]["方式"]
                     obj.data["状态"] = Args[i]["状态"]
                     obj.data["ico"] = Args[i]["ico"]
@@ -562,28 +634,40 @@ export async function EventsDo(arg) {
                 window.vm.List.columns[6].hide = true
             }
         }
-            //恢复过滤器
-        {
-            try {
-                const Filter = JSON.parse(Args.Filter)
-                Object.keys(Filter).forEach((key) => {
-                    const responseTypeFilter = window.vm.List.agGridApi.getFilterInstance(key);
-                    responseTypeFilter.setModel(Filter[key]);
-                });
-                window.vm.List.agGridApi.onFilterChanged();
-            } catch (e) {
-            }
-        }
             //恢复快捷键
         {
             try {
+                if (Args.GOOS !== "windows") {
+                    Object.keys(window.KeysStrings).forEach((key) => {
+                        if (window.KeysStrings[key]) {
+                            if (window.KeysStrings[key].value) {
+                                let obj = window.KeysStrings[key].value
+                                obj = obj.replaceAll("CTRL", "Control")
+                                window.KeysStrings[key].value = obj.replaceAll("ALT", "Option")
+                            }
+                        }
+                    });
+                }
                 const KeysStrings = JSON.parse(Args.KeysStrings)
                 Object.keys(KeysStrings).forEach((key) => {
                     window.KeysStrings[key].ctrlKey = KeysStrings[key].ctrlKey
                     window.KeysStrings[key].altKey = KeysStrings[key].altKey
                     window.KeysStrings[key].shiftKey = KeysStrings[key].shiftKey
                     window.KeysStrings[key].key = KeysStrings[key].key
-                    window.KeysStrings[key].value = KeysStrings[key].value
+                    if (key === "清空全部记录") {
+                        if (window.KeysStrings[key].key === "X") {
+                            window.KeysStrings[key].key = "Q"
+                        }
+                    }
+                    if (Args.GOOS !== "windows") {
+                        let obj = KeysStrings[key].value
+                        obj = obj.replaceAll("CTRL", "Control")
+                        window.KeysStrings[key].value = obj.replaceAll("ALT", "Option")
+                    } else {
+                        let obj = KeysStrings[key].value
+                        obj = obj.replaceAll("Control", "CTRL")
+                        window.KeysStrings[key].value = obj.replaceAll("Option", "ALT")
+                    }
                 });
                 window.vm.List.agGridApi.onFilterChanged();
             } catch (e) {
@@ -591,23 +675,44 @@ export async function EventsDo(arg) {
         }
             //恢复列数据
         {
+            window.vmColumns = {};
             try {
                 const Columns = JSON.parse(Args.Columns)
                 Object.keys(Columns).forEach((key) => {
                     Columns[key].editable = false
                     if (Columns[key]) {
-                        if (Columns[key].field === '注释') {
+                        if (Columns[key].colId === '注释') {
                             Columns[key].editable = true
                         }
+                        if (Columns[key].colId === '序号') {
+                            Columns[key].sortable = true
+                        }
+                        if (Columns[key].hide) {
+                            window.vmColumns[Columns[key].colId] = true;
+                        }
                     }
-                    window.vm.List.columns[key] = Columns[key]
                 });
+                window.vm.List.RefreshColumns(Columns);
 
             } catch (e) {
             }
-
         }
-            //111111111111111111111
+            //恢复过滤器
+        {
+            try {
+                const Filter = JSON.parse(Args.Filter)
+                Object.keys(Filter).forEach((key) => {
+                    if (!window.vmColumns[key]) {
+                        const responseTypeFilter = window.vm.List.agGridApi.getFilterInstance(key);
+                        responseTypeFilter.setModel(Filter[key]);
+                    } else {
+                        window.vmFilterTemp[key] = Filter[key];
+                    }
+                });
+                window.vm.List.agGridApi.onFilterChanged();
+            } catch (e) {
+            }
+        }
             return
         case "更新搜索进度":
             window.vm.Find.per = Args
@@ -728,3 +833,8 @@ function formatTime(timestamp) {
     const seconds = "0" + date.getSeconds();
     return hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
 }
+
+
+window.open = function (url, target, features) {
+    BrowserOpenURL(url)
+};

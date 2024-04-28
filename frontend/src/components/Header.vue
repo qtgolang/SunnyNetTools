@@ -1,7 +1,7 @@
 <template>
-  <div class="ag-header-group-cell-label " :style="backStyle ">
+  <div class="ag-header-group-cell-label " @dblclick="clickWindowButton(2)" :style="backStyle ">
 
-    <div style="display: flex; align-items: center;">
+    <div style="display: flex; align-items: center;" @dblclick.stop>
       <div style="cursor: pointer; display: flex; align-items: center;">
 
         <el-menu
@@ -129,9 +129,9 @@
       </div>
 
     </div>
-    <PartitionOperator/>
+    <PartitionOperator @dblclick.stop/>
     <!-- 文本对比 -->
-    <div style="display: flex; align-items: center;">
+    <div style="display: flex; align-items: center;" @dblclick.stop>
       <div @click="clickTextCompare" style="cursor: pointer; display: flex; align-items: center;">
         <svg :class="svgStyle" xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 24 24">
           <polyline points="4 7 4 4 20 4 20 7" fill="none" stroke-linecap="round" stroke-linejoin="round"
@@ -145,9 +145,9 @@
         文本对比
       </div>
     </div>
-    <PartitionOperator/>
+    <PartitionOperator @dblclick.stop/>
     <!-- 证书安装教程 -->
-    <div style="display: flex; align-items: center;">
+    <div style="display: flex; align-items: center;" @dblclick.stop>
       <div @click="clickDocCompare" style="cursor: pointer; display: flex; align-items: center;">
         <el-icon>
           <Flag/>
@@ -156,9 +156,9 @@
         证书安装教程
       </div>
     </div>
-    <PartitionOperator/>
+    <PartitionOperator @dblclick.stop/>
     <!-- 开源协议 -->
-    <div style="display: flex; align-items: center;">
+    <div style="display: flex; align-items: center;" @dblclick.stop>
       <div @click="clickOpenSourceProtocol" style="cursor: pointer; display: flex; align-items: center;">
         <el-icon>
           <Reading/>
@@ -169,7 +169,8 @@
     </div>
 
 
-    <div style="position: absolute; right: 95px; cursor: pointer;z-index: 1000000;width: 16px;height: 16px">
+    <div style="position: absolute; right: 95px; cursor: pointer;z-index: 1000000;width: 16px;height: 16px"
+         @dblclick.stop>
       <el-popover
           placement="top-start"
           :width="200"
@@ -192,12 +193,14 @@
     </div>
 
 
-    <div style="position: absolute; right: 54px; cursor: pointer;z-index: 1000000" @click="clickWindowButton(1)">
+    <div style="position: absolute; right: 60px; cursor: pointer;z-index: 1000000;font-size: 17px;top: 8px"
+         @click="clickWindowButton(1)" @dblclick.stop>
       <el-icon>
         <SemiSelect/>
       </el-icon>
     </div>
-    <div style="position: absolute; right: 30px; cursor: pointer;z-index: 1000000" @click="clickWindowButton(2)">
+    <div style="position: absolute; right: 33px; cursor: pointer;z-index: 1000000;font-size: 17px;top: 5px"
+         @click="clickWindowButton(2)" @dblclick.stop>
       <el-icon v-if="Maximise===false">
         <TopRight/>
       </el-icon>
@@ -205,7 +208,8 @@
         <BottomLeft/>
       </el-icon>
     </div>
-    <div style="position: absolute; right: 6px; cursor: pointer;z-index: 1000000" @click="clickWindowButton(3)">
+    <div style="position: absolute; right: 6px; cursor: pointer;z-index: 1000000;font-size: 17px;top: 5px"
+         @click="clickWindowButton(3)" @dblclick.stop>
       <el-icon>
         <SwitchButton/>
       </el-icon>
@@ -233,6 +237,7 @@ import {CircleCloseFilled, SuccessFilled} from '@element-plus/icons-vue'
 import {ElMessage} from "element-plus";
 import Doc from "./CertDoc/Doc.vue";
 import OpenSourceProtocol from "./OpenSourceProtocol/OpenSourceProtocol.vue";
+
 
 export default {
   components: {
@@ -294,13 +299,13 @@ export default {
   data() {
     return {
       Stop: false,
-      AutoRollShow: true,
+      AutoRollShow: false,
       WayContent: [
         {
           ip: '暂未获取到',
         },
       ],
-      activeIndex: "",
+      activeIndex: "打开文件",
       Maximise: false,
       get theme() {
         return window.Theme.IsDark
@@ -332,6 +337,7 @@ export default {
       set OpenSourceProtocol(newValue) {
         window.UI.OpenSourceProtocol = newValue
       },
+      WindowSize: {min: 0, max: 0},
     }
   },
   methods: {
@@ -408,8 +414,30 @@ export default {
       if (index === 1) {
         WindowMinimise()
       } else if (index === 2) {
+        let tl = window.vm.List.getTools();
+        if (tl) {
+          const w = parseInt(tl.style.width.replace('px', ''))
+
+          if (this.Maximise) {
+            this.WindowSize.max = w;
+          } else {
+            this.WindowSize.min = w;
+          }
+        }
         this.Maximise = !this.Maximise
         WindowToggleMaximise()
+        this.$nextTick(() => {
+          if (this.Maximise) {
+            if (this.WindowSize.max < 30) {
+              tl.style.width = '300px'
+            } else {
+              tl.style.width = this.WindowSize.max + 'px'
+            }
+          } else {
+            tl.style.width = this.WindowSize.min + 'px'
+          }
+
+        })
       } else if (index === 3) {
         const objs = {}
         const filterModel = window.vm.List.agGridApi.getFilterModel();
@@ -419,7 +447,8 @@ export default {
         }
         CallGoDo("CloseWindow", {
           Filter: StrBase64Encode(JSON.stringify(objs)),
-          KeysStrings: StrBase64Encode(JSON.stringify(window.KeysStrings))
+          KeysStrings: StrBase64Encode(JSON.stringify(window.KeysStrings)),
+          StorageColumns: StrBase64Encode(JSON.stringify(window.vm.List.$refs.agGrid.gridOptions.columnApi.getColumnState()))
         })
       }
 
@@ -570,7 +599,6 @@ export default {
     } catch (e) {
       console.log("UpdateList error", e)
     }
-
     window.vm.Header = this
 
     this.$nextTick(() => {

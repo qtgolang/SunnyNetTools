@@ -78,8 +78,8 @@ const tableData: User[] = [
     altKey: false,
     shiftKey: false,
     metaKey: false,
-    key: "X",
-    value: "CTRL + X",
+    key: "Q",
+    value: "CTRL + Q",
   },
   {
     Name: '复制',
@@ -101,8 +101,14 @@ tableDataMap["复制"] = tableData[5]
 window.KeysStrings = tableDataMap
 const handleKeyDown = (row: User, event: KeyboardEvent) => {
   event.stopPropagation()
-  const mKey = event.key.toUpperCase()
+  let mKey = event.key.toUpperCase()
   if ("CONTROL" === mKey) {
+    return
+  }
+  if ("ALT" === mKey) {
+    return
+  }
+  if ("CTRL" === mKey) {
     return
   }
   if ("BACKSPACE" == mKey) {
@@ -113,35 +119,69 @@ const handleKeyDown = (row: User, event: KeyboardEvent) => {
     row.value = ""
     return;
   }
+  mKey = event.code.toUpperCase()
+  if (mKey.startsWith("KEY")) {
+    mKey = mKey.substring(3);
+  }
   row.altKey = event.altKey
   row.ctrlKey = event.ctrlKey
   row.shiftKey = event.shiftKey
-  row.key = event.key.toUpperCase()
+  row.key = mKey
   let obj = ""
-  {
-    if (row.ctrlKey) {
-      obj = "CTRL"
-    }
-    if (row.altKey) {
-      if (obj === "") {
-        obj = "ALT"
-      } else {
-        obj += " + ALT"
+  if (window.Theme.GOOS === "windows") {
+    {
+      if (row.ctrlKey) {
+        obj = "CTRL"
       }
-    }
-    if (row.shiftKey) {
-      if (obj === "") {
-        obj = "Shift"
-      } else {
-        obj += " + Shift"
+      if (row.altKey) {
+        if (obj === "") {
+          obj = "ALT"
+        } else {
+          obj += " + ALT"
+        }
       }
-    }
+      if (row.shiftKey) {
+        if (obj === "") {
+          obj = "Shift"
+        } else {
+          obj += " + Shift"
+        }
+      }
 
-    if (row.key) {
-      if (obj === "") {
-        obj = row.key
-      } else {
-        obj += " + " + row.key
+      if (row.key) {
+        if (obj === "") {
+          obj = row.key
+        } else {
+          obj += " + " + row.key
+        }
+      }
+    }
+  } else {
+    {
+      if (row.ctrlKey) {
+        obj = "Control"
+      }
+      if (row.altKey) {
+        if (obj === "") {
+          obj = "Option"
+        } else {
+          obj += " + Option"
+        }
+      }
+      if (row.shiftKey) {
+        if (obj === "") {
+          obj = "Shift"
+        } else {
+          obj += " + Shift"
+        }
+      }
+
+      if (row.key) {
+        if (obj === "") {
+          obj = row.key
+        } else {
+          obj += " + " + row.key
+        }
       }
     }
   }

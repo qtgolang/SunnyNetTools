@@ -47,11 +47,19 @@ export default {
           value: "height: 100%;width: 100%;object-fit: fill; object-position: center;",
           label: '拉伸显示',
         },
-      ]
+      ],
+      IsRequest: 0,
     }
   },
   methods: {
-    SetImg(B64IMG, geshi) {
+    SetImg(B64IMG, geshi, Request) {
+      if (Request === 1) {
+        this.IsRequest = 1
+      } else if (Request === 2) {
+        this.IsRequest = 2
+      } else {
+        this.IsRequest = 0
+      }
       this.Body = "data:image/" + geshi + ";base64," + B64IMG
       this.$nextTick(() => {
         let type = geshi.toLowerCase()
@@ -68,7 +76,7 @@ export default {
     }
     ,
     Save() {
-      CallGoDo("保存响应图片", {Theology: window.Theology, type: this.Type})
+      CallGoDo("保存响应图片", {Theology: window.Theology, type: this.Type, IsRequest: this.IsRequest})
     }
   }
 }

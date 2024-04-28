@@ -4,13 +4,19 @@
 package CommAnd
 
 import (
+	"github.com/lwch/rdesktop/clipboard"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 )
 
+var UserSelectPath = ""
+
 func GetDesktopPath() (string, error) {
+	if UserSelectPath != "" {
+		return UserSelectPath, nil
+	}
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -57,4 +63,7 @@ func GetWayArray() []string {
 		}
 	}
 	return ipArray
+}
+func ClipboardText(text string) error {
+	return clipboard.Set(text)
 }

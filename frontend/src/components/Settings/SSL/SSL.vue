@@ -79,7 +79,7 @@
             <div v-show="sslMode==='默认证书'" style="top: 10px;position: relative;display: inline-block">
               <div style="width: 518px;">
                 <el-button v-if="IsWindows" @click="InstallCert(3)">安装默认证书</el-button>
-                <el-button @click="InstallCert(4)">保存默认证书到桌面</el-button>
+                <el-button @click="InstallCert(4)">导出默认证书</el-button>
               </div>
             </div>
             <div>
@@ -164,7 +164,7 @@ export default {
         return
       }
       if (mode === 4) {
-        CallGoDo("保存默认证书到桌面", null)
+        CallGoDo("导出默认证书", null)
         return
       }
       if (mode === 1) {

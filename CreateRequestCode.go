@@ -40,6 +40,8 @@ func CreateRequestCode(TheologyArray []int, Lang string, module string) string {
 				code += mm.Go(module)
 			} else if Lang == "Python" {
 				code += mm.Python(module)
+			} else if Lang == "火山" {
+				code += mm.Hs(module)
 			}
 		}
 	}
@@ -48,6 +50,79 @@ func CreateRequestCode(TheologyArray []int, Lang string, module string) string {
 	}
 	code = strings.ReplaceAll(code, "\r", "")
 	code = strings.ReplaceAll(code, "\n", "\r\n")
+	return code
+}
+func reText(string2 string) string {
+	s := strings.ReplaceAll(string2, "\\", "\\\\")
+	return strings.ReplaceAll(s, "\"", "\\\"")
+}
+func (e *CreateRequest) Hs(module string) string {
+	code := "<火山程序 类型 = \"通常\" 版本 = 1 />\r\n\r\n"
+	if module == "WinHttpW" {
+		code += "方法 " + e.FuncName + " <注释 = \"本函数由SunnyNet网络中间件生成,请搭配精易模块使用 " + e.URL.Path + "\">\n{\n"
+		BytesType := e.IsBytesType()
+		code += "    变量 局_HTTP <类型 = WinHttpW>\n"
+
+		code += "    变量 局_请求地址 <类型 = 文本型>\n"
+		if BytesType {
+			code += "    变量 局_请求数据 <类型 = 字节集类>\n"
+		} else {
+			code += "    变量 局_请求数据 <类型 = 文本型>\n"
+		}
+		if e.Cookie != "" {
+			code += "    变量 局_请求Cookie <类型 = 文本型>\n"
+		}
+		code += "    变量 局_响应字节集 <类型 = 字节集类>\n"
+		code += "    变量 局_响应文本 <类型 = 文本型>\n"
+
+		code += "    局_请求地址 ＝ \"" + reText(e.URL.String()) + "\"\n\n"
+
+		if BytesType {
+			code += "    局_请求数据 ＝ BASE64文本到字节集 (\"" + base64.StdEncoding.EncodeToString(e.Body) + "\")\n\n"
+		} else {
+			code += "    局_请求数据 ＝ \"" + reText(string(e.Body)) + "\"\n"
+		}
+		if e.Cookie != "" {
+			code += "    局_请求Cookie ＝ \"" + reText(e.Cookie) + "\"\n"
+		}
+
+		code += "    局_HTTP.Open (\"" + e.Method + "\", 局_请求地址)\n"
+
+		for k, v := range e.Header {
+			if strings.ToUpper(k) == "CONTENT-LENGTH" {
+				continue
+			}
+			if k == "Accept-Encoding" {
+				if len(v) < 1 {
+					code += "    //局_HTTP.SetRequestHeader (\"" + k + "\",\"\")\n"
+				} else {
+					code += "    //局_HTTP.SetRequestHeader (\"" + k + "\",\"" + reText(v[0]) + "\")\n"
+				}
+				continue
+			}
+			if len(v) < 1 {
+				code += "    局_HTTP.SetRequestHeader (\"" + k + "\",\"\")\n"
+			} else {
+				code += "    局_HTTP.SetRequestHeader (\"" + k + "\",\"" + reText(v[0]) + "\")\n"
+			}
+		}
+		if e.Cookie != "" {
+			code += "    局_HTTP.SetRequestHeader (\"Cookie\",局_请求Cookie)\n"
+		}
+		if e.Method == "GET" {
+			code += "    局_HTTP.Send()\n"
+		} else {
+			if BytesType {
+				code += "    局_HTTP.SendBin(局_请求数据)\n"
+			} else {
+				code += "    局_HTTP.Send(局_请求数据)\n"
+			}
+		}
+		code += "    局_响应字节集 = 局_HTTP.GetResponseBody ()\n"
+		code += "    局_响应文本 ＝ 多字节到文本 (局_响应字节集)\n"
+		code += "    调试输出 (局_响应文本)\n\n"
+	}
+	code += "}\n"
 	return code
 }
 func (e *CreateRequest) ELang(module string) string {
@@ -137,7 +212,6 @@ func (e *CreateRequest) ELang(module string) string {
 		if e.Cookie != "" {
 			code += "局_提交Cookie ＝ 子文本替换 (" + convertELangFormat(e.Cookie) + ", “'”, #引号, , , 真)\n\n"
 		}
-
 		for k, v := range e.Header {
 			if strings.ToUpper(k) == "CONTENT-LENGTH" {
 				continue
@@ -160,9 +234,9 @@ func (e *CreateRequest) ELang(module string) string {
 			code += "局_HTTP.置请求头 (“Cookie”, 局_提交Cookie)\n\n"
 		}
 		if e.Method == "GET" {
-			code += "网站客户端.执行GET (局_网址 , 局_结果, 真, )\n"
+			code += "局_HTTP.执行GET (局_网址 , 局_响应字节集, 真, )\n"
 		} else {
-			code += "网站客户端.执行POST (局_网址,局_提交数据, 局_响应字节集, 真, )\n"
+			code += "局_HTTP.执行POST (局_网址,局_提交数据, 局_响应字节集, 真, )\n"
 		}
 		code += "局_响应文本 ＝ 到文本 (局_响应字节集)\n"
 		code += "调试输出 (局_响应文本)\n\n"
@@ -273,13 +347,22 @@ func (e *CreateRequest) Python(module string) string {
 		if e.Cookie != "" {
 			_header += `        'Cookie': "` + strReplaceAll([]byte(e.Cookie)) + `",` + "\n"
 		}
+		BytesType := e.IsBytesType()
+		payload := ""
+		if BytesType {
+			payload = `encoded_data = "` + base64.StdEncoding.EncodeToString(e.Body) + `"
+    payload = base64.b64decode(encoded_data)`
+		} else {
+			payload = `payload = "` + strReplaceAll(e.Body) + `"`
+		}
+
 		_t := `def ` + e.FuncName + `():
     """ 
     [ ` + e.URL.Path + ` ]
     本函数由SunnyNet网络中间件生成   
     """
     url = "` + e.URL.String() + `"
-    payload = "` + strReplaceAll(e.Body) + `"
+    ` + payload + `
     headers = {
 ` + _header + `
     }
@@ -523,13 +606,13 @@ func (e *CreateRequest) Go(module string) string {
 			continue
 		}
 		if len(v) < 1 {
-			header += `	e.Header.Set("` + k + `","")` + "\n"
+			header += `	req.Header.Set("` + k + `","")` + "\n"
 		} else {
-			header += `	e.Header.Set("` + k + `","` + strReplaceAll([]byte(v[0])) + `")` + "\n"
+			header += `	req.Header.Set("` + k + `","` + strReplaceAll([]byte(v[0])) + `")` + "\n"
 		}
 	}
 	if e.Cookie != "" {
-		header += `	e.Header.Set("Cookie","` + strReplaceAll([]byte(e.Cookie)) + `")` + "\n"
+		header += `	req.Header.Set("Cookie","` + strReplaceAll([]byte(e.Cookie)) + `")` + "\n"
 	}
 	template := `// ` + e.FuncName + ` 本函数由SunnyNet网络中间件生成  //` + e.URL.Path + `
 func ` + e.FuncName + `() {
@@ -560,7 +643,7 @@ func ` + e.FuncName + `() {
 }
 func (e *CreateRequest) IsBytesType() bool {
 	for _, v := range e.Body {
-		if v < 9 {
+		if v < 32 && v != 10 && v != 13 {
 			return true
 		}
 	}
@@ -589,7 +672,7 @@ func (e *CreateRequest) IsFormData() (bool, string) {
 				if index == 0 {
 					Code += "局_提交数据 ＝ “" + Array1[0] + "=" + Array1[1] + "”\n"
 				} else {
-					Code += "局_提交数据 ＝ 局_提交数据 ＋ “" + Array1[0] + "=" + Array1[1] + "”\n"
+					Code += "局_提交数据 ＝ 局_提交数据 ＋ “&" + Array1[0] + "=" + Array1[1] + "”\n"
 				}
 				continue
 			}
@@ -601,9 +684,9 @@ func (e *CreateRequest) IsFormData() (bool, string) {
 				}
 			} else {
 				if isChinese(value) || value != Array1[1] {
-					Code += "局_提交数据 ＝ 局_提交数据 ＋ “" + Array1[0] + "=” ＋ 编码_URL编码 (" + convertELangFormat(value) + ",真,真)\n"
+					Code += "局_提交数据 ＝ 局_提交数据 ＋ “&" + Array1[0] + "=” ＋ 编码_URL编码 (" + convertELangFormat(value) + ",真,真)\n"
 				} else {
-					Code += "局_提交数据 ＝ 局_提交数据 ＋ “" + Array1[0] + "=” ＋ " + convertELangFormat(value) + "\n"
+					Code += "局_提交数据 ＝ 局_提交数据 ＋ “&" + Array1[0] + "=” ＋ " + convertELangFormat(value) + "\n"
 				}
 			}
 		}
@@ -684,6 +767,7 @@ func convertELangFormat(v string) string {
 			str = "\"" + strings.ReplaceAll(str, "\r\n", "\"+#换行符+\"") + "\""
 		}
 	}
+	str = strings.ReplaceAll(str, "+\"\"", "")
 	str = strings.ReplaceAll(str, "\"\"", "")
 	if strings.HasPrefix(str, "+") {
 		str = str[1:]
@@ -695,7 +779,11 @@ func convertELangFormat(v string) string {
 		str = strings.ReplaceAll(str, "++", "+")
 	}
 	if fh != "" {
-		str = "子文本替换 (“" + str + "”, \"" + fh + "\",#引号, , , 真)"
+		if strings.HasPrefix(str, "\"") {
+			str = "子文本替换 (" + str + ", \"" + fh + "\",#引号, , , 真)"
+		} else {
+			str = "子文本替换 (“" + str + "”, \"" + fh + "\",#引号, , , 真)"
+		}
 	}
 	return str
 }

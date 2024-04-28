@@ -17,7 +17,7 @@
   </div>
 
   <div style="position: relative;text-align:right">
-    <el-tag class="ml-2" type="warning">版权所有 (C) 2023 秦天</el-tag>
+    <el-tag class="ml-2" type="warning">版权所有 (C) 2024 秦天</el-tag>
     <br><br><br>
   </div>
 </template>

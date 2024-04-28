@@ -9,7 +9,12 @@
 <script>
 import * as monaco from 'monaco-editor'
 
+let SaveTextUpdate = true;
+
 function IsRemoveMenu(value, zd) {
+  if (value.indexOf("保存修改") !== -1) {
+    return !SaveTextUpdate
+  }
   let Menu = [
     "转到符号", "更改所有匹配项", "命令面板"
   ]
@@ -60,7 +65,8 @@ export default {
         setValue: null,
         formatCode: null,
         SetReadOnly: null,
-        setModelLanguage: null
+        setModelLanguage: null,
+        setSaveTextUpdate: null
       },
       IsHasModify: false
     }
@@ -188,6 +194,12 @@ export default {
           monaco.editor.setModelLanguage(editor.getModel(), lang);
         })
       }
+      this.Function.setSaveTextUpdate = (o) => {
+        this.$nextTick(() => {
+          SaveTextUpdate = o;
+        })
+      }
+
       this.Function.setValue = (newContent) => {
         editor.setValue(newContent);
         editor.setScrollTop(0);
@@ -217,6 +229,12 @@ export default {
         this.Function.setModelLanguage(v)
       }
     },
+    SetSaveTextUpdate(v) {
+      if (this.Function.setSaveTextUpdate) {
+        this.Function.setSaveTextUpdate(v)
+      }
+    },
+
     SetSaveFunc(v) {
       this.Function.Save = v
     },
@@ -235,7 +253,7 @@ export default {
       return this.IsHasModify
     }
   },
-  computed:{
+  computed: {
     getTheme() {
       return this.theme
     }

@@ -1,6 +1,7 @@
 <template>
-  <VueText ref="RawText" :height="BodyRectHeight" :glyphMargin="false" :readOnly="false" Language="'html'"
-           Name="ActiveView"/>
+  <div :style="`position: absolute; top: 0;left: 0;width: 100%;height: ${BodyRectHeight};`">
+    <VueText ref="RawText" Language="'html'" Name="ActiveView"/>
+  </div>
   <div :style="`position: absolute; top: ${RectHeight};display: flex;width: 100%;`">
     <el-select v-model="SendType" class="m-2" placeholder="Select" size="small" style="flex-grow: 0;width: 157px">
       <el-option
@@ -46,10 +47,12 @@ export default {
   components: {VueText},
   computed: {
     BodyRectHeight() {
+      console.log("BodyRectHeight",)
       return (parseInt(this._Height.replaceAll("px", "")) - 28) + "px"
     },
     RectHeight() {
-      return (parseInt(this._Height.replaceAll("px", "")) + 5) + "px"
+      const top = (parseInt(this._Height.replaceAll("px", "")) - 25) + "px"
+      return top
     },
   },
   data() {
@@ -120,6 +123,9 @@ export default {
         this.IsSending = false
       })
     }
-  }
+  },
+  mounted() {
+    this.$refs.RawText.SetReadOnly(false)
+  },
 }
 </script>

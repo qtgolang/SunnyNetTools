@@ -34,6 +34,17 @@ import (
 	"errors"
 )
 
+var _____internal_______pidGetName func(int) string
+
+func _____internal_______setPidGetName(A func(int) string) {
+	_____internal_______pidGetName = A
+}
+func GoGetPidName(pid int) string {
+	if _____internal_______pidGetName != nil {
+		return _____internal_______pidGetName(pid)
+	}
+	return ""
+}
 func GoMD5(a any, key ...any) []byte {
 	_key := make([]byte, 0)
 	if len(key) > 0 {

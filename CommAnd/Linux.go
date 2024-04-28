@@ -9,7 +9,12 @@ import (
 	"strconv"
 )
 
+var UserSelectPath = ""
+
 func GetDesktopPath() (string, error) {
+	if UserSelectPath != "" {
+		return UserSelectPath, nil
+	}
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -40,4 +45,7 @@ func InstallCert(certificates []byte) string {
 func GetWayArray() []string {
 
 	return nil
+}
+func ClipboardText(text string) error {
+	return clipboard.WriteAll(text)
 }

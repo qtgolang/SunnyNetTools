@@ -3,6 +3,7 @@ package MapHash
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"github.com/qtgolang/SunnyNet/SunnyNet"
 	"github.com/qtgolang/SunnyNet/public"
@@ -26,29 +27,29 @@ type Map struct {
 }
 
 type WaitGroup struct {
-	l sync.Mutex
-	n sync.WaitGroup
-	i int
+	lock      sync.Mutex
+	waitGroup sync.WaitGroup
+	i         int
 }
 
 func (v *WaitGroup) Add(i int) {
-	v.l.Lock()
+	v.lock.Lock()
 	v.i += i
-	v.l.Unlock()
-	v.n.Add(i)
+	v.waitGroup.Add(i)
+	v.lock.Unlock()
 }
 func (v *WaitGroup) Done() {
-	v.l.Lock()
+	v.lock.Lock()
 	v.i--
 	if v.i < 0 {
-		v.l.Unlock()
+		v.lock.Unlock()
 		return
 	}
-	v.l.Unlock()
-	v.n.Done()
+	v.waitGroup.Done()
+	v.lock.Unlock()
 }
 func (v *WaitGroup) Wait() {
-	v.n.Wait()
+	v.waitGroup.Wait()
 }
 
 type Request struct {
@@ -560,4 +561,58 @@ type UpdateSocketList struct {
 type UpdateSocketData struct {
 	Info *UpdateSocketList `json:"Info"`
 	Body []byte            `json:"Body"`
+}
+type RequestImg struct {
+	Body string `json:"Body"`
+	Type string `json:"Type"`
+}
+
+var multipartTag = []byte("--")
+var multipartTag2 = []byte("\r\n\r\n")
+
+func (r *Request) GetRequestImg() *RequestImg {
+	if r == nil || r.Body == nil {
+		return nil
+	}
+	ar := bytes.Split(r.Body, []byte("\n"))
+	tag := make([]byte, 0)
+	if len(ar) > 0 {
+		tag = ar[0]
+	}
+	if !bytes.HasPrefix(tag, multipartTag) {
+		return nil
+	}
+	ar = bytes.Split(r.Body, tag)
+	for _, v := range ar {
+		m := strings.ToLower(string(v))
+		_type := strings.TrimSpace(public.SubString(m, "content-type:", "\n"))
+		if strings.Contains(_type, "image/") {
+			ar1 := strings.Split(_type, "/")
+			if len(ar1) < 2 {
+				continue
+			}
+			_type = ar1[1]
+			ar2 := bytes.Split(v, multipartTag2)
+			if len(ar2) < 2 {
+				continue
+			}
+			bs := make([]byte, 0)
+			for k, vv := range ar2 {
+				if k == 0 {
+					continue
+				}
+				if k == 1 {
+					bs = append(bs, vv...)
+					continue
+				}
+				bs = append(bs, multipartTag2...)
+				bs = append(bs, vv...)
+			}
+			res := &RequestImg{}
+			res.Body = base64.StdEncoding.EncodeToString(bs)
+			res.Type = _type
+			return res
+		}
+	}
+	return nil
 }

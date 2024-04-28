@@ -7,6 +7,7 @@ import (
 	"changeme/Resource"
 	"encoding/json"
 	"fmt"
+	gops "github.com/mitchellh/go-ps"
 	"github.com/qtgolang/SunnyNet/SunnyNet"
 	"github.com/qtgolang/SunnyNet/public"
 	"github.com/traefik/yaegi/interp"
@@ -295,7 +296,7 @@ func RunCode() (SErr string) {
 	}
 	_wsFunc := v.Interface().(func(uniqueId, Type, PID int, Url, Method string, Header http.Header, MessageType int, Body []byte, SendDataToServer func(MessageType int, data []byte) bool, SendDataToClient func(MessageType int, data []byte) bool, Close func() bool) ([]byte, bool))
 	if _wsFunc == nil {
-		return "找不到NewHttpSunny"
+		return "找不到NewWebsocketSunny"
 	}
 	defer func() {
 		if p := recover(); p != nil {
@@ -316,7 +317,7 @@ func RunCode() (SErr string) {
 	}
 	_tcpFunc := v.Interface().(func(uniqueId, Type, PID int, Body []byte, LocalAddress, RemoteAddress string, SetConnectionIP func(NewAddress string) bool, SetAgent func(ProxyUrl string) bool, SendDataToServer func(data []byte) bool, SendDataToClient func(data []byte) bool, Close func() bool) ([]byte, bool))
 	if _tcpFunc == nil {
-		return "找不到NewHttpSunny"
+		return "找不到NewTCPSunnyy"
 	}
 	defer func() {
 		if p := recover(); p != nil {
@@ -340,8 +341,8 @@ func RunCode() (SErr string) {
 		return err.Error()
 	}
 	_udpFunc := v.Interface().(func(uniqueId, Type, PID int, Body []byte, LocalAddress, RemoteAddress string) ([]byte, bool))
-	if _tcpFunc == nil {
-		return "找不到NewHttpSunny"
+	if _udpFunc == nil {
+		return "找不到NewUDPSunnyy"
 	}
 	defer func() {
 		if p := recover(); p != nil {
@@ -350,6 +351,15 @@ func RunCode() (SErr string) {
 	}()
 	_udpFunc(0, 1, 0, []byte("点击测试脚本代码:udp回调函数"), "UDP_Test_LocalAddress", "UDP_Test_RemoteAddress")
 
+	v, err = iEval.Eval("main._____internal_______setPidGetName")
+	if err != nil {
+		return err.Error()
+	}
+	setPidGetName := v.Interface().(func(func(int) string))
+	if setPidGetName == nil {
+		return "setPidGetName"
+	}
+	setPidGetName(GetPidName)
 	lock.Lock()
 	NewEval = iEval
 	httpFunc = _httpFunc
@@ -358,6 +368,20 @@ func RunCode() (SErr string) {
 	udpFunc = _udpFunc
 	lock.Unlock()
 	return ""
+}
+
+func GetPidName(pid int) string {
+	if pid < 1 {
+		return ""
+	}
+	process, err := gops.FindProcess(pid)
+	if err != nil {
+		return ""
+	}
+	if process == nil {
+		return ""
+	}
+	return process.Executable()
 }
 func RunCodeLog() (Str string) {
 	defer func() {
@@ -378,7 +402,12 @@ func RunCodeLog() (Str string) {
 	return Str
 }
 
-func RunHTTPRequestScriptCode(Conn *SunnyNet.HttpConn) bool {
+func RunHTTPRequestScriptCode(Conn *SunnyNet.HttpConn) (_Display bool) {
+	defer func() {
+		if p := recover(); p != nil {
+			_Display = true
+		}
+	}()
 	h := &MapHash.Request{Display: true}
 	h.URL = Conn.Request.URL.String()
 	h.Header = Conn.Request.Header.Clone()
@@ -483,7 +512,12 @@ func RunHTTPRequestScriptCode(Conn *SunnyNet.HttpConn) bool {
 	}
 	return Display
 }
-func RunHTTPResponseScriptCode(Conn *SunnyNet.HttpConn) bool {
+func RunHTTPResponseScriptCode(Conn *SunnyNet.HttpConn) (_Return_ bool) {
+	defer func() {
+		if p := recover(); p != nil {
+			_Return_ = false
+		}
+	}()
 	URL := Conn.Request.URL.String()
 	Header := Conn.Request.Header.Clone()
 	Method := Conn.Request.Method
@@ -534,6 +568,10 @@ func RunHTTPResponseScriptCode(Conn *SunnyNet.HttpConn) bool {
 	return _Break
 }
 func RunHTTPErrorScriptCode(Conn *SunnyNet.HttpConn) {
+	defer func() {
+		if p := recover(); p != nil {
+		}
+	}()
 	URL := Conn.Request.URL.String()
 	Header := Conn.Request.Header.Clone()
 	Method := Conn.Request.Method
@@ -552,7 +590,12 @@ func RunHTTPErrorScriptCode(Conn *SunnyNet.HttpConn) {
 	}
 	_Call(Conn.Theology, Conn.Type, Conn.PID, URL, Method, Header, Body, Conn.SetAgent, make(http.Header), Body2, -1, true)
 }
-func RunWebSocketScriptCode(Conn *SunnyNet.WsConn) bool {
+func RunWebSocketScriptCode(Conn *SunnyNet.WsConn) (_Return_ bool) {
+	defer func() {
+		if p := recover(); p != nil {
+			_Return_ = true
+		}
+	}()
 	URL := Conn.Request.URL.String()
 	Header := Conn.Request.Header.Clone()
 	Method := Conn.Request.Method
@@ -567,7 +610,12 @@ func RunWebSocketScriptCode(Conn *SunnyNet.WsConn) bool {
 	Conn.SetMessageBody(Body2)
 	return Break
 }
-func RunTcpScriptCode(Conn *SunnyNet.TcpConn) bool {
+func RunTcpScriptCode(Conn *SunnyNet.TcpConn) (_Return_ bool) {
+	defer func() {
+		if p := recover(); p != nil {
+			_Return_ = true
+		}
+	}()
 	lock.Lock()
 	_Call := tcpFunc
 	lock.Unlock()
@@ -593,7 +641,12 @@ func RunTcpScriptCode(Conn *SunnyNet.TcpConn) bool {
 	}
 	return Break
 }
-func RunUdpScriptCode(Conn *SunnyNet.UDPConn) bool {
+func RunUdpScriptCode(Conn *SunnyNet.UDPConn) (_Return_ bool) {
+	defer func() {
+		if p := recover(); p != nil {
+			_Return_ = true
+		}
+	}()
 	lock.Lock()
 	_Call := udpFunc
 	lock.Unlock()

@@ -388,18 +388,10 @@ export default {
       } else {
         this.SetHTTPPagesShow("HTML视图", false)
       }
-      try {
-        const json = JSON.parse(_Body);
-        if (typeof json === 'object' && json !== null && _Body !== "") {
-          this.SetHTTPPagesShow("JSON视图", true)
-          this.$refs.Json.SetReadOnly(this.readOnly)
-          this.$refs.Json.SetCode(Body)
-        } else {
-          this.SetHTTPPagesShow("JSON视图", false)
-        }
-      } catch (error) {
-        this.SetHTTPPagesShow("JSON视图", false)
-      }
+      this.$refs.Json.SetReadOnly(this.readOnly)
+      this.$refs.Json.SetCode(Body)
+      this.SetHTTPPagesShow("JSON视图", true)
+
       this.$nextTick(() => {
         this.$refs.Headers.SelectedLine(0)
         this.$refs.Cookies.SelectedLine(0)
@@ -522,7 +514,6 @@ export default {
   },
   mounted() {
     window.vm.Tabs.Response = this
-
     {
       const elementRef = this.$refs.BodyRect; // 获取元素的引用
       // 创建 ResizeObserver 实例并监听元素尺寸变化

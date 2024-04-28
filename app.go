@@ -1,6 +1,7 @@
 package main
 
 import (
+	"changeme/CommAnd"
 	"context"
 	"encoding/json"
 	"github.com/qtgolang/SunnyNet/SunnyNet"
@@ -131,4 +132,7 @@ func getInt64(arg any) int64 {
 }
 func getInt(arg any) int {
 	return int(getInt64(arg))
+}
+func ClipboardText(text string) error {
+	return CommAnd.ClipboardText(text)
 }

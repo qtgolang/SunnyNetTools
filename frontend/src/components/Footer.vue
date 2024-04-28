@@ -9,7 +9,7 @@
     <span ref="eLabel">{{ Title }}</span>
     <div class="ag-header-cell-resize" style="position:absolute;height: 20px;width: 20px"></div>
 
-    <SwitchTheme style="right: 0px;position:absolute;cursor:pointer"/>
+    <SwitchTheme style="right: 6px;position:absolute;cursor:pointer;top:2px"/>
   </div>
 </template>
 
@@ -29,7 +29,7 @@ export default {
   },
   computed: {
     backStyle() {
-      let c = "height: 30px;background-color: #202020;"
+      let c = "height: 30px;background-color: #202020;position: relative;z-index: 999999;"
       if (!this.theme) {
         c += "background-color: #f0f0f0;"
       } else {

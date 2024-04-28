@@ -9,10 +9,10 @@
       :enableCharts="true"
       :modules="leftModules"
       :grid-options="gridOptions"
+
       :overlayNoRowsTemplate="overlayNoRowsTemplate"
   >
   </ag-grid-vue>
-  <div v-show="LineSelected" :class="IsDarkTheme"/>
 </template>
 
 <script>
@@ -23,7 +23,7 @@ import {ClipboardModule} from '@ag-grid-enterprise/clipboard';
 import {SetFilterModule} from '@ag-grid-enterprise/set-filter';
 import {ExcelExportModule} from '@ag-grid-enterprise/excel-export';
 import {CallGoDo} from "../../CallbackEventsOn.js";
-
+import ImageRenderer from './image.vue';
 export default {
   props: ['readOnly'],
   watch: {
@@ -32,18 +32,9 @@ export default {
     },
   },
   components: {
-    'ag-grid-vue': AgGridVue,
+    'ag-grid-vue': AgGridVue, imageRenderer: ImageRenderer,
   },
   computed: {
-    LineSelected() {
-      if (this.ReadOnly) {
-        this.columns[0].editable = false
-      } else {
-        this.columns[0].editable = true
-      }
-      //务必返回 false
-      return false
-    },
     IsDarkTheme() {
       const event = new Event('darkThemeChange');
       window.dispatchEvent(event);
@@ -84,7 +75,7 @@ export default {
       IsHasModify: false,
       //当前选中行
       agSelectedLine: null,
-      ListFollowShow: true,
+      ListFollowShow: false,
       RowDataHashMap: {},
       overlayNoRowsTemplate: `<span style="padding: 20px;" id="HookMessageText">无内容</span>`,
       leftModules: [SetFilterModule, ClipboardModule],
@@ -99,7 +90,6 @@ export default {
         getRowStyle: this.onGetRowStyle,
         onRowDataUpdated: this.NewColumnsLoaded,
         onModelUpdated: this.NewColumnsLoaded,
-        onRowSelected: this.onRowSelected,
         suppressScrollOnNewData: true,
       },
       defaultColDef: {
@@ -126,8 +116,6 @@ export default {
       RowData: [],
       columns: [
         {
-          checkboxSelection: true,
-          headerCheckboxSelection: true,
           field: "PID", tooltipField: 'PID',
           minWidth: 110,
           maxWidth: 110,
@@ -135,8 +123,8 @@ export default {
           menuTabs: ['filterMenuTab'],
           //禁止列拖动
           suppressMovable: true,
-          editable: true,
           sortable: true,
+          cellRenderer: 'imageRenderer',
           cellStyle: {'text-align': 'left'},
         },
         {
@@ -146,7 +134,6 @@ export default {
           menuTabs: ['filterMenuTab'],
           //禁止列拖动
           suppressMovable: true,
-          editable: true,
           sortable: true,
           cellStyle: {'text-align': 'left'},
         },
@@ -206,11 +193,6 @@ export default {
     onRowClicked(params) {
       params.node.setSelected(true);
       this.agSelectedLine = params.node
-    },
-    onRowSelected(event) {
-      const node = event.node;
-      const gx = node.isSelected()
-      CallGoDo("进程驱动添加PID", {PID: node.data['PID'], isSelected: gx})
     },
     SelectedLine(index) {
       const focusedRowNode = this.agGridApi.getRowNode(index);
