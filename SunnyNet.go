@@ -790,7 +790,7 @@ func WSCallback(Conn *SunnyNet.WsConn) {
 func TcpCallback(Conn *SunnyNet.TcpConn) {
 	h := HashMap.GetRequest(Conn.Theology)
 	if Conn.Type == public.SunnyNetMsgTypeTCPClose {
-		time.Sleep(2 * time.Second)
+		//time.Sleep(2 * time.Second)
 		if h != nil {
 			h.TcpConn = nil
 		}
@@ -916,14 +916,17 @@ func TcpCallback(Conn *SunnyNet.TcpConn) {
 			},
 			Body: []byte("已断开连接"),
 		}
-		HashMap.SetSocketData(Conn.Theology, _update, false, 0)
-		Insert.Lock()
-		isUpdateRequestInfo := currentlySelected == Conn.Theology
-		if isUpdateRequestInfo {
-			SocketData = append(SocketData, _update.Info)
-		}
-		UpdateListICO = append(UpdateListICO, &UpdateICO{Theology: Conn.Theology, Ico: "websocket_close"})
-		Insert.Unlock()
+		go func() {
+			time.Sleep(2 * time.Second)
+			HashMap.SetSocketData(Conn.Theology, _update, false, 0)
+			Insert.Lock()
+			isUpdateRequestInfo := currentlySelected == Conn.Theology
+			if isUpdateRequestInfo {
+				SocketData = append(SocketData, _update.Info)
+			}
+			UpdateListICO = append(UpdateListICO, &UpdateICO{Theology: Conn.Theology, Ico: "websocket_close"})
+			Insert.Unlock()
+		}()
 		//关闭
 		return
 	}
@@ -938,7 +941,7 @@ func UdpCallback(Conn *SunnyNet.UDPConn) {
 	}
 	_TmpLock.Unlock()
 	if public.SunnyNetUDPTypeClosed == Conn.Type {
-		time.Sleep(2 * time.Second)
+		//time.Sleep(2 * time.Second)
 	} else if public.SunnyNetUDPTypeSend == Conn.Type || public.SunnyNetUDPTypeReceive == Conn.Type {
 		Conn.Data = ReplaceBody(Conn.Data)
 	}
@@ -1040,6 +1043,7 @@ func UdpCallback(Conn *SunnyNet.UDPConn) {
 		Insert.Unlock()
 		//Websocket发送数据
 		return
+
 	}
 	if public.SunnyNetUDPTypeClosed == Conn.Type {
 		if h == nil {
@@ -1058,14 +1062,17 @@ func UdpCallback(Conn *SunnyNet.UDPConn) {
 			},
 			Body: []byte("已断开连接"),
 		}
-		HashMap.SetSocketData(Theology, _update, false, 0)
-		Insert.Lock()
-		isUpdateRequestInfo := currentlySelected == Theology
-		if isUpdateRequestInfo {
-			SocketData = append(SocketData, _update.Info)
-		}
-		UpdateListICO = append(UpdateListICO, &UpdateICO{Theology: Theology, Ico: "websocket_close"})
-		Insert.Unlock()
+		go func() {
+			time.Sleep(2 * time.Second)
+			HashMap.SetSocketData(Theology, _update, false, 0)
+			Insert.Lock()
+			isUpdateRequestInfo := currentlySelected == Theology
+			if isUpdateRequestInfo {
+				SocketData = append(SocketData, _update.Info)
+			}
+			UpdateListICO = append(UpdateListICO, &UpdateICO{Theology: Theology, Ico: "websocket_close"})
+			Insert.Unlock()
+		}()
 		//关闭
 		return
 	}

@@ -1,5 +1,5 @@
 <template xmlns="http://www.w3.org/1999/html">
-  <div class="top-component" :style="WindowStyleZIndex" @mousedown="WindowClick">
+  <div class="top-component" :style="WindowStyleZIndex" @mousedown="WindowClick" >
     <div class="ag-panel ag-default-panel ag-dialog ag-ltr ag-popup-child" tabindex="-1" role="dialog"
          aria-label="Range Chart"
          :style="WindowStyle" ref="Window">
@@ -198,6 +198,7 @@ import Replace from "./Settings/ReplaceRules/Replace.vue";
 import RequestCertificate from "./Settings/RequestCertificate/RequestCertificate.vue";
 import Proc from "./Settings/process/proc.vue";
 import {ElMessage} from "element-plus";
+import ResponseTabs from "./Response/Response_Tabs.vue";
 
 function pxToInt(E) {
   const eve = E + ""
@@ -303,6 +304,7 @@ export default {
     }
   },
   components: {
+    ResponseTabs,
     Proc,
     RequestCertificate,
     Replace,

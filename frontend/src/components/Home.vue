@@ -609,7 +609,6 @@ export default {
     }
     ,
     handleKeyDown(event) {
-      event.d
       const mKey = event.key.toUpperCase()
       const FindObjs = window.KeysStrings["搜索/查找"]
       const copyObjs = window.KeysStrings["复制"]
@@ -1117,6 +1116,11 @@ export default {
     responseTypeFilter.setModel({
       type: 'notEqual',
       filter: 'error'
+    });
+    const RequestAddressFilter = this.agGridApi.getFilterInstance('响应类型');
+    RequestAddressFilter.setModel({
+      type: 'Contains',
+      filter: ']:53'
     });
 
     window.vm.List.agGridApi.onFilterChanged();

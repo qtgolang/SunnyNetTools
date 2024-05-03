@@ -654,11 +654,13 @@ export async function EventsDo(arg) {
                     window.KeysStrings[key].altKey = KeysStrings[key].altKey
                     window.KeysStrings[key].shiftKey = KeysStrings[key].shiftKey
                     window.KeysStrings[key].key = KeysStrings[key].key
+                    /*
                     if (key === "清空全部记录") {
                         if (window.KeysStrings[key].key === "X") {
                             window.KeysStrings[key].key = "Q"
                         }
                     }
+                    */
                     if (Args.GOOS !== "windows") {
                         let obj = KeysStrings[key].value
                         obj = obj.replaceAll("CTRL", "Control")

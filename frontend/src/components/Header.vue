@@ -1,5 +1,5 @@
 <template>
-  <div class="ag-header-group-cell-label " @dblclick="clickWindowButton(2)" :style="backStyle ">
+  <div class="ag-header-group-cell-label " @dblclick="clickWindowButton(2)" :style="backStyle " >
 
     <div style="display: flex; align-items: center;" @dblclick.stop>
       <div style="cursor: pointer; display: flex; align-items: center;">
@@ -216,10 +216,10 @@
       <!--       <span class="ag-icon ag-icon-cross ag-panel-title-bar-button-icon"></span>   -->
     </div>
   </div>
-  <Strings ref="Strings" v-show="ShowSetting" :show="ShowSetting"/>
-  <Doc ref="Doc" v-show="ShowDocCompare" :show="ShowDocCompare"/>
-  <TextCompare ref="TextCompare" v-show="ShowTextCompare" :show="ShowTextCompare"/>
-  <OpenSourceProtocol ref="OpenSourceProtocol" v-show="ShowOpenSourceProtocol" :show="ShowOpenSourceProtocol"/>
+  <Strings ref="Strings" v-show="ShowSetting" :show="ShowSetting"   @keydown.stop="handleKeyDown"/>
+  <Doc ref="Doc" v-show="ShowDocCompare" :show="ShowDocCompare" />
+  <TextCompare ref="TextCompare" v-show="ShowTextCompare" :show="ShowTextCompare"   @keydown.stop="handleKeyDown"/>
+  <OpenSourceProtocol ref="OpenSourceProtocol" v-show="ShowOpenSourceProtocol" :show="ShowOpenSourceProtocol" />
 </template>
 
 <script>
@@ -589,6 +589,9 @@ export default {
 
       })
     },
+    handleKeyDown(event) {
+      event.stopPropagation();
+    }
   },
   mounted() {
     try {

@@ -17,6 +17,7 @@
 <script lang="ts" setup>
 
 import {computed, ref} from "vue";
+import {ElMessage} from "element-plus";
 
 const IsDark = computed(() => {
   if (window.Theme.IsDark) {
@@ -78,8 +79,8 @@ const tableData: User[] = [
     altKey: false,
     shiftKey: false,
     metaKey: false,
-    key: "Q",
-    value: "CTRL + Q",
+    key: "X",
+    value: "CTRL + X",
   },
   {
     Name: '复制',
@@ -155,6 +156,15 @@ const handleKeyDown = (row: User, event: KeyboardEvent) => {
           obj += " + " + row.key
         }
       }
+      /*
+      if (obj==='CTRL + X'){
+        ElMessage({
+          message: "请勿设置[CTRL + X]原因和剪辑冲突",
+          dangerouslyUseHTMLString: true,
+          type: 'error',
+        })
+      }
+      */
     }
   } else {
     {
@@ -186,7 +196,6 @@ const handleKeyDown = (row: User, event: KeyboardEvent) => {
     }
   }
   row.value = obj
-  // 在这里可以访问到 scope.row 的值
 }
 
 defineExpose({

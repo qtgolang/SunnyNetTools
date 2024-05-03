@@ -759,7 +759,7 @@ func (c *UserConfig) loadDefaultValue() {
 		c.Size.Height = 700
 	}
 	if c.Filter == "" {
-		c.Filter = "{\"响应长度\":{\"filterType\":\"text\",\"type\":\"notContains\",\"filter\":\"0/0\"},\"响应类型\":{\"filterType\":\"text\",\"type\":\"notEqual\",\"filter\":\"error\"}}"
+		c.Filter = "{\"响应长度\":{\"filterType\":\"text\",\"type\":\"notContains\",\"filter\":\"0/0\"},\"响应类型\":{\"filterType\":\"text\",\"type\":\"notEqual\",\"filter\":\"error\"},\"请求地址\":{\"filterType\":\"text\",\"type\":\"notContains\",\"filter\":\"]:53\"}}"
 	}
 	if c.DarkTheme == 0 {
 		c.DarkTheme = 1

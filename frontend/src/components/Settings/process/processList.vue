@@ -38,10 +38,10 @@ export default {
     LineSelected() {
       if (this.ReadOnly) {
         this.MenuItems[0].visible = false
-        this.columns[0].editable = false
+        //this.columns[0].editable = false
       } else {
         this.MenuItems[0].visible = this.agSelectedLine !== null;
-        this.columns[0].editable = true
+        //this.columns[0].editable = true
       }
       //务必返回 false
       return false
@@ -134,8 +134,7 @@ export default {
           menuTabs: [],
           //禁止列拖动
           suppressMovable: true,
-          editable: true,
-          sortable: true,
+          //editable: true,
           cellStyle: {'text-align': 'left'},
         },
       ],

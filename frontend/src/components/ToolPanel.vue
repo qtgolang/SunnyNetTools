@@ -224,6 +224,9 @@ export default {
         }
         this.$refs.splitA1.style.height = (this.clientY + 5 - 30) + 'px';
       }
+    },
+    handleKeyDown(event) {
+      event.stopPropagation();
     }
   },
   mounted() {
@@ -252,7 +255,7 @@ export default {
         <span :class="UpdateIcon" unselectable="on" role="presentation"
               style="right: 0;position:absolute;cursor:pointer" @click="SetMaximize(1)"></span>
       </div>
-      <RequestTabs ref="Request" :Theology="GetTheology" :RequestWay="GetRequestWay"/>
+      <RequestTabs ref="Request" :Theology="GetTheology" :RequestWay="GetRequestWay" @keydown.stop="handleKeyDown"/>
       <div ref="splitA2" v-show="Show.Response" @mousedown="handleMouseDown" class="ag-resizer ag-resizer-bottom"
            style="pointer-events: all;z-index: 1000"></div>
 
@@ -270,7 +273,7 @@ export default {
         <span :class="UpdateIcon" unselectable="on" role="presentation"
               style="right: 0px;position:absolute;cursor:pointer" @click="SetMaximize(2)"></span>
       </div>
-      <ResponseTabs ref="Response" :Theology="GetTheology" :RequestWay="GetRequestWay"/>
+      <ResponseTabs ref="Response" :Theology="GetTheology" :RequestWay="GetRequestWay"  @keydown.stop="handleKeyDown"/>
     </div>
     <div v-show="NoRequest===false&& NoData&&DisplayTCPResponse===false"
          style="width: 100%;height: 100%;display: flex;align-items: center;justify-content: center;">
