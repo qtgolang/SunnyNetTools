@@ -88,6 +88,7 @@ export default {
           name: '删除',
           action: () => {
             if (this.agSelectedLine !== null) {
+              CallGoDo("进程驱动添加进程名", {Name: this.agSelectedLine.data["进程名"], isSet: false})
               this.RowData.splice(this.agSelectedLine.rowIndex, 1)
               this.agGridApi.setRowData(this.RowData);
               this.agSelectedLine = null
@@ -158,11 +159,16 @@ export default {
       })
     },
     AddLine(name, value) {
-      let obj = {}
-      obj[this.columns[0].field] = name
-      this.RowData.push(obj)
+      // 检查是否已经存在相同的name值
+      const isNameExists = this.RowData.some(row => row[this.columns[0].field].toLowerCase() === name);
+      if (isNameExists) {
+        return;
+      }
+      let obj = {};
+      obj[this.columns[0].field] = name;
+      this.RowData.push(obj);
       this.agGridApi.setRowData(this.RowData);
-      this.IsHasModify = false
+      this.IsHasModify = false;
     },
     Empty() {
       this.RowData = []

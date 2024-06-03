@@ -51,6 +51,7 @@ export default {
       Function: {
         Save: null,
         GetCode: null,
+        setValue: null,
       }
     }
   },
@@ -168,6 +169,10 @@ export default {
       this.Function.GetCode = () => {
         return editor.getValue()
       }
+      this.Function.setValue = (newContent) => {
+        editor.setValue(newContent);
+        editor.setScrollTop(0);
+      }
     },
     // 供父组件调用手动获取值
     GetCode() {
@@ -180,7 +185,10 @@ export default {
     SetSaveFunc(v) {
       this.Function.Save = v
     },
-    SetCode() {
+    SetCode(newContent) {
+      if (this.Function.setValue) {
+        this.Function.setValue(newContent)
+      }
     }
 
   }

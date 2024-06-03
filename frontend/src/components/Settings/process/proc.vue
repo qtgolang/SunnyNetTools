@@ -119,7 +119,7 @@ export default {
   },
   methods: {
     addProcessName() {
-      const pName = this.AddName.trim()
+      const pName = this.AddName.trim().toLowerCase()
       if (pName === '') {
         ElMessage({
           message: "请输入要添加的进程名",

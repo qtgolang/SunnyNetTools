@@ -8,7 +8,7 @@ require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/lwch/rdesktop v1.2.2
 	github.com/mitchellh/go-ps v1.0.0
-	github.com/qtgolang/SunnyNet v0.0.0-20240428013020-bf7428a442c3
+	github.com/qtgolang/SunnyNet v0.0.2
 	github.com/traefik/yaegi v0.15.1
 	github.com/wailsapp/wails/v2 v2.7.1
 	golang.org/x/text v0.14.0
@@ -21,6 +21,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
+	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/labstack/echo/v4 v4.10.2 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/leaanthony/go-ansi-parser v1.6.0 // indirect

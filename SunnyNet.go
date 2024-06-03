@@ -799,8 +799,13 @@ func TcpCallback(Conn *SunnyNet.TcpConn) {
 	} else if Conn.Type == public.SunnyNetMsgTypeTCPAboutToConnect {
 		{
 			h = HashMap.SetRequestTCP(Conn.Theology, Conn)
-			h.URL = Conn.LocalAddr + "->" + Conn.RemoteAddr
 			h.Method = string(Conn.GetBody())
+			_ = RunTcpScriptCode(Conn)
+			hm := string(Conn.GetBody())
+			if hm != h.Method {
+				Conn.RemoteAddr = hm
+			}
+			h.URL = Conn.LocalAddr + "->" + Conn.RemoteAddr
 			Conn.RemoteAddr = HostsRulesAddress(Conn.RemoteAddr)
 			Conn.SetConnectionIP(Conn.RemoteAddr)
 			return

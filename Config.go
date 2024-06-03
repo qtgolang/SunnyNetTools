@@ -624,7 +624,7 @@ func RunTcpScriptCode(Conn *SunnyNet.TcpConn) (_Return_ bool) {
 	}
 	_Type := 0
 	if Conn.Type == public.SunnyNetMsgTypeTCPAboutToConnect {
-		_Type = 5
+		_Type = 0
 	} else if Conn.Type == public.SunnyNetMsgTypeTCPConnectOK {
 		_Type = 1
 	} else if Conn.Type == public.SunnyNetMsgTypeTCPClientSend {
@@ -636,7 +636,7 @@ func RunTcpScriptCode(Conn *SunnyNet.TcpConn) (_Return_ bool) {
 	}
 	Body := Conn.GetBody()
 	Body2, Break := _Call(Conn.Theology, _Type, Conn.Pid, Body, Conn.LocalAddr, Conn.RemoteAddr, Conn.SetConnectionIP, Conn.SetAgent, func(data []byte) bool { return Conn.SendToServer(data) != 0 }, func(data []byte) bool { return Conn.SendToClient(data) != 0 }, Conn.Close)
-	if _Type == 2 || _Type == 3 || _Type == 5 {
+	if _Type == 2 || _Type == 3 {
 		Conn.SetBody(Body2)
 	}
 	return Break
@@ -719,6 +719,7 @@ type UserConfig struct {
 	GoScriptCode           []byte               `json:"ScriptCode"`
 	Port                   int                  `json:"Port"`
 	DisableUDP             bool                 `json:"DisableUDP"`
+	DisableTCP             bool                 `json:"DisableTCP"`
 	DisableCache           bool                 `json:"DisableCache"`
 	Authentication         bool                 `json:"OpenAuthentication"`
 	AuthenticationUserInfo map[string]string    `json:"AuthenticationUserInfo"`

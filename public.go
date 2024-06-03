@@ -358,6 +358,7 @@ func event(command string, args *JSON.SyJson) any {
 		}
 		go lanZouUpdate()
 		app.App = SunnyNet.NewSunny()
+		app.App.DisableTCP(DisableTCP)
 		app.App.SetPort(GlobalConfig.Port)
 		//app.App.MustTcp(true)
 		app.App.SetGoCallback(HttpCallback, TcpCallback, WSCallback, UdpCallback)
@@ -507,10 +508,12 @@ func event(command string, args *JSON.SyJson) any {
 		configLock.Lock()
 		GlobalConfig = _GlobalConfig
 		configLock.Unlock()
+		DisableTCP = GlobalConfig.DisableTCP
 		CallJs("加载配置", GlobalConfig)
 
 		app.App.Close()
 		app.App.SetPort(GlobalConfig.Port)
+		app.App.DisableTCP(false)
 		app.App.Start()
 		if app.App.Error == nil {
 			CallJs("启动状态", "")
@@ -1423,6 +1426,18 @@ func event(command string, args *JSON.SyJson) any {
 		_ = GlobalConfig.saveToFile()
 		_TmpLock.Unlock()
 		return true
+	case "禁止TCP":
+		_TmpLock.Lock()
+		DisableTCP = args.GetData("DisableTCP") == "true"
+		GlobalConfig.DisableTCP = DisableTCP
+		_ = GlobalConfig.saveToFile()
+		if app != nil {
+			if app.App != nil {
+				app.App.DisableTCP(DisableTCP)
+			}
+		}
+		_TmpLock.Unlock()
+		return true
 	case "禁止缓存":
 		_TmpLock.Lock()
 		DisableCache = args.GetData("DisableBrowserCache") == "true"
@@ -1469,6 +1484,7 @@ func event(command string, args *JSON.SyJson) any {
 }
 
 var DisableUDP = false
+var DisableTCP = false
 var DisableCache = false
 var SocketAuthentication []string
 

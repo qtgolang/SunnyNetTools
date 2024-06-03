@@ -2,6 +2,7 @@ package main
 
 import (
 	"changeme/CommAnd"
+	"github.com/qtgolang/SunnyNet/src/JsCall"
 	"github.com/qtgolang/SunnyNet/src/protobuf/JSON"
 )
 
@@ -23,7 +24,7 @@ func processEvent(command string, args *JSON.SyJson) any {
 		return true
 	case "进程驱动添加进程名":
 		gx := args.GetData("isSet") == "true"
-		Name := args.GetData("Name")
+		Name := JsCall.ToGBK(args.GetData("Name"))
 		if Name == "{OpenALL}" {
 			app.App.ProcessALLName(gx)
 			return true

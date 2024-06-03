@@ -15,6 +15,16 @@
     </div>
     <div style="">
       <el-tooltip class="item" effect="dark"
+                  content="[请使用Pro版本] 开启后每个请求的TLS指纹将随机变化"
+                  placement="top">
+        <el-checkbox label="随机TLS指纹" disabled/>
+      </el-tooltip>
+      <el-tooltip class="item" effect="dark"
+                  content="[设置Socket5代理有效] 将禁止非HTTP/S的TCP连接,某些APP,将先尝试TCP请求,如果TCP请求失败才会发送HTTP请求,这种场景下有用"
+                  placement="top">
+        <el-checkbox v-model="Option.DisableTCP" label="禁用TCP"/>
+      </el-tooltip>
+      <el-tooltip class="item" effect="dark"
                   content="[手机端设置Socket5代理有效、PC加载驱动有效] 将禁止发送、接收UDP数据,例如某手APP,若不禁用UDP,某些关键数据将捕获不到"
                   placement="top">
         <el-checkbox v-model="Option.DisableUDP" label="禁用UDP"/>
@@ -68,12 +78,16 @@ export default {
       Port: 8089,
       Option: {
         DisableUDP: false,
+        DisableTCP: false,
         authentication: false,
         DisableBrowserCache: false
       }
     }
   },
   watch: {
+    'Option.DisableTCP': (newVal, oldVal) => {
+      CallGoDo("禁止TCP", {DisableTCP: newVal})
+    },
     'Option.DisableUDP': (newVal, oldVal) => {
       CallGoDo("禁止UDP", {DisableUDP: newVal})
     },
@@ -87,7 +101,8 @@ export default {
   methods: {
     ResetAll() {
       CallGoDo("重置所有配置", {Port: this.Port}).then(res => {
-
+        this.Option.DisableTCP = false
+        this.Option.DisableUDP = false
       })
     },
     submitPort() {
