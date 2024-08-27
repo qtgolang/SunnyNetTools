@@ -8,7 +8,7 @@ require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/lwch/rdesktop v1.2.2
 	github.com/mitchellh/go-ps v1.0.0
-	github.com/qtgolang/SunnyNet v0.0.2
+	github.com/qtgolang/SunnyNet v1.0.3
 	github.com/traefik/yaegi v0.15.1
 	github.com/wailsapp/wails/v2 v2.7.1
 	golang.org/x/text v0.14.0
