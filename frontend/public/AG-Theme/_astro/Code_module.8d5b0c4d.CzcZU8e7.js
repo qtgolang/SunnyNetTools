@@ -1,0 +1,1 @@
+const o="_clipboardButtonOuter_8cpmg_1",t="_hasCopied_8cpmg_13",p="_clipboardButton_8cpmg_1",c="_clipboardButtonCopied_8cpmg_34",d="_clipboardButtonCopiedOuter_8cpmg_57",i={clipboardButtonOuter:o,hasCopied:t,clipboardButton:p,clipboardButtonCopied:c,clipboardButtonCopiedOuter:d};export{i as s};

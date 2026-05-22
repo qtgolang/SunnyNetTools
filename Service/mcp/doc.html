@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>SunnyNetTools MCP 文档</title>
+    <style>
+        :root {
+            --bg: #0b0d10;
+            --card: #11151b;
+            --text: #e8eef6;
+            --muted: #a9b4c2;
+            --line: #243140;
+            --accent: #7cc4ff;
+            --accent2: #9dffb3;
+            --warn: #ffd37c;
+            --header-h: 148px;
+            --sticky-gap: 10px;
+        }
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(180deg, #0b0d10, #0a0b0d);
+            color: var(--text);
+        }
+        header {
+            padding: 28px 18px 18px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(17, 21, 27, .65);
+            backdrop-filter: blur(6px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .wrap {
+            max-width: none;
+            width: 100%;
+            margin: 0;
+            padding: 0 16px;
+            box-sizing: border-box;
+        }
+        h1 { margin: 0 0 8px; font-size: 20px; }
+        .sub { color: var(--muted); font-size: 13px; line-height: 1.55; }
+        .grid {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 14px;
+            padding: 16px 0 36px;
+        }
+        nav {
+            border: 1px solid var(--line);
+            background: var(--card);
+            border-radius: 10px;
+            padding: 12px;
+            position: sticky;
+            top: calc(var(--header-h) + var(--sticky-gap));
+            height: fit-content;
+        }
+        nav a {
+            display: block;
+            color: var(--text);
+            text-decoration: none;
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        nav a:hover { background: rgba(124, 196, 255, .09); }
+        nav .muted { color: var(--muted); font-size: 12px; margin: 10px 10px 6px; }
+        main section {
+            scroll-margin-top: calc(var(--header-h) + var(--sticky-gap));
+            border: 1px solid var(--line);
+            background: var(--card);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+        h2 { margin: 0 0 10px; font-size: 16px; }
+        h3 { margin: 14px 0 8px; font-size: 14px; color: var(--accent); }
+        p, li { font-size: 13px; line-height: 1.75; }
+        ul { margin: 8px 0 8px 18px; }
+        .note {
+            border-left: 3px solid var(--warn);
+            padding: 8px 10px;
+            background: rgba(255, 211, 124, .07);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.75;
+        }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12.5px; }
+        th, td { border-bottom: 1px solid var(--line); padding: 9px 8px; vertical-align: top; }
+        th { text-align: left; color: var(--muted); font-weight: 600; }
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12px;
+            color: #d9e6f3;
+            word-break: break-all;
+        }
+        pre {
+            margin: 10px 0;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #0a0f14;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.55;
+        }
+        .pill {
+            display: inline-block;
+            padding: 2px 7px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            font-size: 11px;
+            color: var(--muted);
+            margin: 0 6px 6px 0;
+        }
+        @media (max-width: 920px) {
+            .grid { grid-template-columns: 1fr; }
+            nav { position: relative; top: auto; }
+        }
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(124, 196, 255, 0.5) rgba(36, 49, 64, 0.4);
+            scrollbar-gutter: stable;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(36, 49, 64, 0.45);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(124, 196, 255, 0.6), rgba(157, 255, 179, 0.45));
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(124, 196, 255, 0.85), rgba(157, 255, 179, 0.65));
+            background-clip: padding-box;
+        }
+        ::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="wrap">
+        <h1>SunnyNetTools MCP 文档</h1>
+        <div class="sub">
+            主程序启动后默认监听 <span class="mono">127.0.0.1:6987</span>。能力通过统一 <strong>op</strong> 暴露，与主窗口 UI 解耦；界面「序号」为 <strong>listIndex</strong>，内部主键为 <strong>theology</strong>。
+        </div>
+    </div>
+</header>
+
+<div class="wrap">
+    <div class="grid">
+        <nav>
+            <div class="muted">接入</div>
+            <a href="#access">端点与协议</a>
+            <a href="#invoke">REST 调用</a>
+            <a href="#streamable">Streamable MCP</a>
+            <a href="#id">ID 约定</a>
+            <div class="muted">能力分组</div>
+            <a href="#ops-meta">元信息</a>
+            <a href="#ops-engine">引擎 / 代理</a>
+            <a href="#ops-break">断点 / 重放</a>
+            <a href="#ops-list">主列表</a>
+            <a href="#ops-records">导入 / 导出</a>
+            <a href="#ops-session">会话 / 正文</a>
+            <a href="#ops-stream">流消息</a>
+            <a href="#ops-config">规则 / 证书</a>
+            <a href="#ops-device">驱动 / 进程</a>
+            <a href="#ops-ui">主题 / 工具</a>
+        </nav>
+
+        <main>
+            <section id="access">
+                <h2>端点与协议</h2>
+                <table>
+                    <tr><th>用途</th><th>地址</th></tr>
+                    <tr><td>本文档</td><td class="mono">GET http://127.0.0.1:6987/doc</td></tr>
+                    <tr><td>健康检查</td><td class="mono">GET http://127.0.0.1:6987/sunnynet/tools/health</td></tr>
+                    <tr><td>能力目录 JSON</td><td class="mono">GET http://127.0.0.1:6987/sunnynet/tools/supported-ops</td></tr>
+                    <tr><td>REST 调用业务</td><td class="mono">POST http://127.0.0.1:6987/sunnynet/tools/invoke</td></tr>
+                    <tr><td>列表变更 SSE</td><td class="mono">GET http://127.0.0.1:6987/sunnynet/tools/events</td></tr>
+                    <tr><td>Cursor / Claude Streamable MCP</td><td class="mono">http://127.0.0.1:6987/sunnynet/tools/mcp</td></tr>
+                </table>
+            </section>
+
+            <section id="invoke">
+                <h2>REST 调用（invoke）</h2>
+                <p>请求体为单行 JSON，字段 <span class="mono">op</span> + <span class="mono">args</span>：</p>
+                <pre class="mono">POST /sunnynet/tools/invoke
+Content-Type: application/json
+
+{
+  "id": 1,
+  "op": "get_status",
+  "args": {}
+}</pre>
+                <p>响应：</p>
+                <pre class="mono">{
+  "id": 1,
+  "ok": true,
+  "result": { "sunnyRunning": true, "mainCount": 12, ... }
+}</pre>
+                <p>失败时 <span class="mono">ok: false</span>，<span class="mono">error</span> 为错误说明。</p>
+            </section>
+
+            <section id="streamable">
+                <h2>Streamable MCP（Cursor 等）</h2>
+                <p>在 MCP 客户端中配置 Server URL：</p>
+                <pre class="mono">http://127.0.0.1:6987/sunnynet/tools/mcp</pre>
+                <p>工具名前缀为 <span class="mono">sunnynet_</span>，例如 <span class="mono">sunnynet_get_status</span>、<span class="mono">sunnynet_main_slice</span>，与 REST 的 <span class="mono">op</span> 一一对应（去掉前缀即可）。</p>
+            </section>
+
+            <section id="id">
+                <h2>ID 约定（listIndex / theology / rowId）</h2>
+                <ul>
+                    <li>界面「序号」列 = <strong>listIndex</strong>（从 1 开始，第 66 条 → <span class="mono">listIndex: 66</span> 或 <span class="mono">main_slice</span> 的 <span class="mono">offset: 65</span>）。</li>
+                    <li><strong>theology</strong> = 内部会话主键（整数，可为负）。</li>
+                    <li><strong>rowId</strong> = <strong>theology</strong> 的十进制字符串，恒满足 <span class="mono">rowId === String(theology)</span>（例如 theology <span class="mono">66</span> → rowId <span class="mono">"66"</span>）。不是 <span class="mono">http-*</span> 别名，也不是 listIndex。</li>
+                    <li>多行操作一次传入 <span class="mono">listIndexes</span>、<span class="mono">rowIds</span>、<span class="mono">ids</span> 或 <span class="mono">theologies</span>，禁止循环单条调用。</li>
+                    <li>流表 <span class="mono">streamKey</span> 一般为 <span class="mono">rowId</span>（即 theology 字符串）；子消息用 <span class="mono">messageId</span>（整数）。</li>
+                </ul>
+                <div class="note">
+                    批量约定：写注释用 <span class="mono">main_row_note_set</span>；读断点状态用 <span class="mono">main_row_break_get</span>（<span class="mono">breakMode</span> 0/1/2）；断点放行用 <span class="mono">break_continue</span> / <span class="mono">break_continue_all</span>；读大正文用 <span class="mono">http_get_part</span> / <span class="mono">stream_get_part</span> 分块。
+                </div>
+            </section>
+
+            <section id="ops-meta">
+                <h2>元信息</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">ping</td><td>链路自检，返回 <code>{"pong":true}</code></td></tr>
+                    <tr><td class="mono">get_status</td><td>引擎运行、端口、代理、捕获区可见、断点模式、列表行数</td></tr>
+                    <tr><td class="mono">list_supported_ops</td><td>机器可读全量能力表（含 description/args/returns）</td></tr>
+                    <tr><td class="mono">row_theology</td><td>校验 rowId（=strconv(theology)）与 theology 一致</td></tr>
+                </table>
+            </section>
+
+            <section id="ops-engine">
+                <h2>引擎 / 代理 / 捕获区</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">engine_start</td><td>启动 Sunny；参数 port?、useSystemProxy?</td></tr>
+                    <tr><td class="mono">engine_stop</td><td>停止引擎并取消系统代理</td></tr>
+                    <tr><td class="mono">engine_apply_advanced</td><td>payload：高级设置 JSON（端口、禁用 TCP/UDP、代理、MustTcp 等）</td></tr>
+                    <tr><td class="mono">capture_hide / capture_show</td><td>隐藏 / 显示主界面抓包列表区</td></tr>
+                    <tr><td class="mono">system_proxy_enable / disable</td><td>设置 / 取消系统代理</td></tr>
+                </table>
+            </section>
+
+            <section id="ops-break">
+                <h2>HTTP 断点 / 重放 / 代码生成</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">break_continue</td><td>放行指定会话（可批量）</td></tr>
+                    <tr><td class="mono">break_continue_all</td><td>放行全部断点会话</td></tr>
+                    <tr><td class="mono">break_skip_to_response</td><td>请求断点跳到响应断点</td></tr>
+                    <tr><td class="mono">break_sync_request</td><td>改 URL/头/体并刷新主列表；默认不放行，须 continue:true 或 break_continue</td></tr>
+                    <tr><td class="mono">break_sync_response</td><td>改响应并刷新主列表；默认不放行</td></tr>
+                    <tr><td class="mono">http_replay</td><td>重发；interceptMode?、repeatCount?</td></tr>
+                    <tr><td class="mono">generate_builtin_code</td><td>language + module；成功时代码在剪贴板，text 常为空</td></tr>
+                </table>
+            </section>
+
+            <section id="ops-list">
+                <h2>主列表</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">main_count</td><td>返回 <code>{"total":n}</code>（勿当裸整数解析）</td></tr>
+                    <tr><td class="mono">main_slice</td><td>分页：offset、limit；含 columns + rows[].cells</td></tr>
+                    <tr><td class="mono">main_cells</td><td>按 rowId 取单行各列字符串</td></tr>
+                    <tr><td class="mono">main_clear</td><td>清空列表（同步 UI）</td></tr>
+                    <tr><td class="mono">main_delete</td><td>按 ids 删除</td></tr>
+                    <tr><td class="mono">main_delete_except</td><td>keepIds：只保留这些行</td></tr>
+                    <tr><td class="mono">main_apply_row_mark</td><td>颜色标记；ids + mark</td></tr>
+                    <tr><td class="mono">main_search</td><td>内存搜索唯一命中；返回 theology、listIndex、rowId</td></tr>
+                    <tr><td class="mono">main_row_note_get / set</td><td>读 / 写注释（支持批量）</td></tr>
+                    <tr><td class="mono">main_row_break_get</td><td>读行断点状态：breakMode、isWaiting、interceptState</td></tr>
+                </table>
+            </section>
+
+            <section id="ops-records">
+                <h2>记录导入 / 导出 / 会话包</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">records_import</td><td>从 .sy4 文件还原主列表（参数 filePath）</td></tr>
+                    <tr><td class="mono">records_export</td><td>导出为 .sy4；未指定会话 id 时导出全部</td></tr>
+                    <tr><td class="mono">session_pack_export</td><td>导出单条 WS/TCP 流消息 .bin 包</td></tr>
+                </table>
+            </section>
+
+            <section id="ops-session">
+                <h2>会话详情 / HTTP 正文</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">session_get_json</td><td>结构化摘要：type、interceptState、url、code 等（不含超大 body）</td></tr>
+                    <tr><td class="mono">http_get_part</td><td>part：requestBody | responseBody | rawRequest | rawResponse；type：auto|hex|base64|str；offset、maxLen</td></tr>
+                    <tr><td class="mono">pb_to_json</td><td>Protobuf → JSON；dataB64、skipFirstBytes?</td></tr>
+                </table>
+            </section>
+
+            <section id="ops-stream">
+                <h2>流消息（TCP / UDP / WebSocket）</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">stream_count</td><td>streamKey → <code>{"total":n}</code></td></tr>
+                    <tr><td class="mono">stream_slice</td><td>流表分页；streamKey、offset、limit</td></tr>
+                    <tr><td class="mono">stream_get_part</td><td>单条流消息正文；messageId、type、offset、maxLen</td></tr>
+                    <tr><td class="mono">stream_get_hex</td><td>同 stream_get_part，默认 hex</td></tr>
+                    <tr><td class="mono">stream_send</td><td>主动发送；dataB64、direction(server/client)、wsFrameType、sendType</td></tr>
+                </table>
+            </section>
+
+            <section id="ops-config">
+                <h2>规则 / 证书</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">config_get/set_replace</td><td>全部规则；type=「拦截请求」为拦截，其余为替换；含 convention 与 ruleKind</td></tr>
+                    <tr><td class="mono">config_get/set_intercept</td><td>仅拦截：type=拦截请求；source=查找范围，lod 命中则断点</td></tr>
+                    <tr><td class="mono">config_get/set_rewrite</td><td>仅替换：type 为字符串/Base64/十六进制；source 内旧数据→新数据</td></tr>
+                    <tr><td class="mono">config_rule_set_state</td><td>单条启用/禁用（勿用空 rulesJSON）</td></tr>
+                    <tr><td class="mono">config_get/set_host</td><td>Host 映射列表/全量覆盖（数组 JSON）</td></tr>
+                    <tr><td class="mono">config_host_add</td><td>新增 lod→new</td></tr>
+                    <tr><td class="mono">config_host_delete</td><td>按 id 或 lod 删除（勿用 config_rule_set_state）</td></tr>
+                    <tr><td class="mono">config_host_update</td><td>按 id 修改 lod/new/note</td></tr>
+                    <tr><td class="mono">config_get/set_proxy_dns</td><td>DNS：local / remote / remotes(:853)</td></tr>
+                    <tr><td class="mono">config_get_proxy_way</td><td>上游代理列表</td></tr>
+                    <tr><td class="mono">config_proxy_way_add</td><td>新增 http/https/socks5 代理；支持 user:pass@ 或 username+password</td></tr>
+                    <tr><td class="mono">config_proxy_way_update</td><td>修改 url / 状态 / 注释</td></tr>
+                    <tr><td class="mono">config_proxy_way_update_note</td><td>仅改注释</td></tr>
+                    <tr><td class="mono">config_proxy_way_delete</td><td>删除上游代理</td></tr>
+                    <tr><td class="mono">config_proxy_way_set_state</td><td>启用/禁用上游代理</td></tr>
+                    <tr><td class="mono">config_proxy_way_update</td><td>改 url/state/note</td></tr>
+                    <tr><td class="mono">config_get/set_proxy_roles</td><td>不使用上游代理规则</td></tr>
+                    <tr><td class="mono">config_get/set_must_tcp</td><td>强制 TCP 模式与规则</td></tr>
+                    <tr><td class="mono">config_get_engine_toggles</td><td>一次读取禁用 TCP/UDP/缓存、请求大小</td></tr>
+                    <tr><td class="mono">config_get_disable_tcp</td><td>读取禁用 TCP 状态</td></tr>
+                    <tr><td class="mono">config_get_disable_udp</td><td>读取禁用 UDP 状态</td></tr>
+                    <tr><td class="mono">config_get_disable_cache</td><td>读取禁用浏览器缓存状态</td></tr>
+                    <tr><td class="mono">config_set_disable_tcp/udp/cache</td><td>设置单项开关</td></tr>
+                    <tr><td class="mono">config_get/set_limit_request_size</td><td>限制请求提交大小</td></tr>
+                    <tr><td class="mono">config_get/set_https_protocol</td><td>HTTP/1.1 或 H2 优先</td></tr>
+                    <tr><td class="mono">config_get/set_random_ja3</td><td>随机 JA3</td></tr>
+                    <tr><td class="mono">config_set_https_protocol</td><td>协议+可选指纹/template/JA3，自动应用</td></tr>
+                    <tr><td class="mono">config_set_http2_fingerprint</td><td>写入指纹 JSON 并自动应用</td></tr>
+                    <tr><td class="mono">config_apply_http2_template</td><td>载入内置模板并自动应用</td></tr>
+                    <tr><td class="mono">config_list/get_http2_template</td><td>内置 HTTP2 模板</td></tr>
+                    <tr><td class="mono">config_get/set_block</td><td>屏蔽规则（本项目无独立存储，写为 no-op）</td></tr>
+                    <tr><td class="mono">request_cert_list</td><td>请求证书列表 {certs,total,convention}</td></tr>
+                    <tr><td class="mono">request_cert_add</td><td>新增并载入；certPath、domain；P12 需 password；role 默认解析及发送</td></tr>
+                    <tr><td class="mono">request_cert_delete</td><td>按 id 删除并卸载</td></tr>
+                    <tr><td class="mono">request_cert_update</td><td>按 id 改 domain/note/role，可选换证路径并重新载入</td></tr>
+                </table>
+            </section>
+
+            <section id="ops-device">
+                <h2>驱动 / 进程过滤</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">device_status</td><td>是否 Windows、驱动是否已加载</td></tr>
+                    <tr><td class="mono">device_load</td><td>mode：0 Proxifier / 1 NFAPI / 2 Tun</td></tr>
+                    <tr><td class="mono">device_process_*</td><td>按进程名或 PID 增删；cancel_all 清空</td></tr>
+                </table>
+            </section>
+
+            <section id="ops-ui">
+                <h2>主题</h2>
+                <table>
+                    <tr><th>op</th><th>说明</th></tr>
+                    <tr><td class="mono">ui_theme_get</td><td>当前明暗与 listColors 等</td></tr>
+                    <tr><td class="mono">ui_theme_set</td><td>mode：dark | light | toggle</td></tr>
+                </table>
+                <p style="margin-top:12px;color:var(--muted)">
+                    完整参数与返回值说明请调用 <span class="mono">list_supported_ops</span> 或访问
+                    <span class="mono">/sunnynet/tools/supported-ops</span>。
+                </p>
+            </section>
+        </main>
+    </div>
+</div>
+</body>
+</html>

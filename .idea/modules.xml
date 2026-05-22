@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/SunnyNet.iml" filepath="$PROJECT_DIR$/.idea/SunnyNet.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/SunnyNetTools.iml" filepath="$PROJECT_DIR$/.idea/SunnyNetTools.iml" />
     </modules>
   </component>
 </project>

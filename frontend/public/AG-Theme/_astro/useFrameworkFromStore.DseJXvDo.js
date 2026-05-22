@@ -1,0 +1,1 @@
+import{a as m}from"./constants.ByWzZ7-G.js";import{u as s}from"./index.D5D8HuSX.js";import{$ as n}from"./frameworkStore.ClcZRMTt.js";import{g as F}from"./framework.BKTXsEy-.js";import{r as t}from"./index.DHWipiO2.js";function p(){const r=s(n),[o,a]=t.useState(m);return t.useEffect(()=>{const e=F(r);e!==o&&a(e)},[r]),o}export{p as u};

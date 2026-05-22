@@ -1,1260 +1,1694 @@
 <script>
-//主题深色 ag-theme-balham-dark
-//主题浅色 ag-theme-balham
-import {reactive} from 'vue';
-import '@ag-grid-community/styles/ag-grid.css';
-import '@ag-grid-community/styles/ag-theme-balham.css';
-import {AgGridVue} from '@ag-grid-community/vue3';
-import {ClipboardModule} from '@ag-grid-enterprise/clipboard';
-import {SetFilterModule} from '@ag-grid-enterprise/set-filter';
-import {ExcelExportModule} from '@ag-grid-enterprise/excel-export';
-import ImageRenderer from './image.vue';
-import ToolPanel from './ToolPanel.vue';
-import FindWindow from './Find/FindWindow.vue';
-import AgHeaderGroup from './Header.vue';
-import AgFooterGroup from './Footer.vue';
-import {CallGoDo, deepCopy, SetTextColor} from "./CallbackEventsOn.js";
-import {ClipboardSetText} from "../../wailsjs/runtime/runtime.js";
-import {ElMessage} from "element-plus";
-
-window.Theme = reactive({
-  IsDark: true,
-  GOOS: Window.GOOS,
-});
-window.Socket = reactive({
-  Line: null,
-  Data: null
-});
-window.UI = reactive({
-  ZIndex: {
-    Settings: 0,
-    TextCompare: 0,
-    FindWindow: 0,
-    DocCompare: 0,
-    CloseWindow: 0,
-    OpenSourceProtocol: 0,
-  },
-  Settings: false,
-  TextCompare: false,
-  FindWindow: false,
-  DocCompare: false,
-  CloseWindow: false,
-  OpenSourceProtocol: false
-});
-window.Size = reactive({
-  Settings: {Width: 0, Height: 0},
-  Doc: {Width: 0, Height: 0},
-  OpenSourceProtocol: {Width: 0, Height: 0},
-});
-window.SetUILevel = function (name) {
-  let max = 36
-  for (let key in window.UI.ZIndex) {
-    if (window.UI.ZIndex[key] > max) {
-      max = window.UI.ZIndex[key]
-    }
-  }
-  window.UI.ZIndex[name] = max + 1
-}
+import {AgGridVue} from "ag-grid-vue3";
+import {
+  Config_agGrid_API,
+  Config_AutoRoll,
+  Config_Find_Window_Hide,
+  Config_Focus_Element,
+  Config_HomeTextMark,
+  Config_IsDark,
+  Config_IsShowExportProgress,
+  Config_Menu_isFileMenu,
+  Config_MenuVisible,
+  Config_SelectedRow,
+  Config_SunnyNetIsStart,
+  Config_Status_Info,
+  Config_HTTP_Message_free,
+  Config_Theme_agGrid,
+  DisableClick,
+  getThisObject,
+  registerThisObject,
+} from "./config/Config.js";
+import {
+  AppCheckSunnyNet,
+  AppDeleteSession,
+  AppDisconnectTCPRequest,
+  AppExport,
+  AppGenerateCode,
+  AppImport,
+  AppResendRequest,
+  FreeAllRequest,
+  GetColumnState,
+  GetPort,
+  GOOS,
+  ListSearch,
+  McpFuncRes,
+  OpenSunnyFile,
+  SaveSunnyFile,
+  SetColumnState,
+  SetRequestNextBreakMode,
+  UpdateNote
+} from "../../bindings/changeme/Service/appmain.js";
+import {AG_GRID_LOCALE_CN} from "./config/AG_ZH_CN.js";
+import ListenOn from "./config/ListenOn.vue";
+import reqsPanel from './Home/reqsPanel.vue';
+import HomeFooter from './Home/Footer/Footer.vue';
+import Tools from './Tools/Tools.vue';
+import Settings from './SideBar/Settings.vue';
+import Device from './SideBar/Device.vue';
+import ScriptLog from './SideBar/ScriptLog.vue';
+import Header from "./Home/Header/Header.vue";
+import ImageRenderer from "./Home/imageRenderer.vue";
+import FindWindow from "./Tools/Find/FindWindow.vue";
+import Filter from "./Tools/Filter/filter.vue";
+import {keydownEventListener, Keys_System_id_ResendRequest, registerHotkeyFunction} from "./config/Keys";
+import {GetGenerateCodeListMenu} from "./config/GenerateCode";
+import {ElLoading, ElMessageBox, ElNotification} from "element-plus";
+import {nextTick} from "vue";
+import TitleBar from "./TitleBar/TitleBar.vue";
+import VTitlebar from "./TitleBar/VUETitlebar/vueTitlebar.vue";
+import {OpenTools} from "./CallbackEventsOn";
+import {Events} from "@wailsio/runtime";
 
 export default {
-  beforeMount() {
-
-  }, components: {
-    'ag-grid-vue': AgGridVue, imageRenderer: ImageRenderer, FindWindow,
-    ToolPanel, AgHeaderGroup, AgFooterGroup
+  components: {
+    VTitlebar,
+    TitleBar,
+    Filter,
+    Settings,
+    FindWindow,
+    Header,
+    'ag-grid-vue': AgGridVue,
+    'toolsSideBar': Tools,
+    'ScriptLogSideBar': ScriptLog,
+    reqsPanel,
+    ImageRenderer,
+    HomeFooter,
+    ListenOn,
+    Device
   },
-  data: function () {
+  data() {
     return {
-      index: 0,
       agGridApi: null,
-      //选择的行数组
-      agSelectedArray: [],
-      //点击的列
-      colId: "",
-      //当前选中行
-      agSelectedLine: null,
-      RowData: [],
-      RowDataHashMap: {},
-      TagColorMap: [],
-      ListDom: null,
-      //鼠标是否在列表范围内
-      IsListDomRange: false,
-      leftModules: [SetFilterModule, ClipboardModule],
-      rightModules: [ExcelExportModule],
+      agGridApiMain: null,
+      agSelectedRowNodes: [],
+      rowData: [],
+      colDefs: [],
+      isHideHook: false,
+      AdvancedFilterModel: null,
+      mainFilter: null,
+      isGoFilter: false,//是否使用Go过滤
+      GoFilterList: new Set([]),
+      isSearch: false,  //是搜索结果
+      GoSearchList: new Set([]),
+      HideHookList: new Set([]),
       defaultColDef: {
         flex: 1,
-        minWidth: 10,
-        sortable: false,  // 禁用全部列的排序功能
-        filter: "agTextColumnFilter",
-        filterParams: {
-          maxNumConditions: 10
-        },
+        sortable: false,
         resizable: true,
-        menuTabs: ['filterMenuTab'],
-        suppressNavigable: false,
-        cellClass: 'no-border',
+        suppressHeaderMenuButton: true,
       },
-      gridOptions: {
-        getRowId: (params) => params.data.Theology,
-        //rowSelection: 'multiple',
-        onRangeSelectionChanged: this.onRangeSelectionChanged,
-        onRowClicked: this.onRowClicked,
-        onCellFocused: this.onCellFocused,
-        getContextMenuItems: this.onContextMenuItems,
-        getRowStyle: this.onGetRowStyle,
-        onRowDataUpdated: this.NewColumnsLoaded,
-        onModelUpdated: this.NewColumnsLoaded,
-        suppressScrollOnNewData: true, // 禁用自动滚动到第一行
-        onColumnVisible: this.onColumnChange,
-        onColumnMoved: this.onColumnChange,
-        onColumnResized: this.onColumnChange,
-        onCellValueChanged: this.CellValueChanged,
-      },
-      columns: [
-        {
-          field: "序号", tooltipField: '序号',
-          minWidth: 80,
-          width: 80,
-          maxWidth: 100,
-          sortable: true,
-          menuTabs: [], // 不显示过滤器
-          cellRenderer: 'imageRenderer', cellStyle: {'text-align': 'left'},
-        },
-        {
-          field: "方式", tooltipField: '方式',
-          minWidth: 90,
-          width: 90,
-          maxWidth: 90, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "状态", tooltipField: '状态',
-          minWidth: 80,
-          width: 80,
-          maxWidth: 80, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "HOST", width: 120, minWidth: 120, tooltipField: 'HOST', hide: true,
-          maxWidth: 500, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "Query", width: 200, minWidth: 200, tooltipField: 'Query', hide: true,
-          maxWidth: 2000, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "请求地址", width: 200, minWidth: 200, tooltipField: '请求地址',
-          maxWidth: 2000, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "响应长度", width: 120, minWidth: 120, tooltipField: '响应长度',
-          maxWidth: 120, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "响应类型", width: 120, minWidth: 120, tooltipField: '响应类型',
-          maxWidth: 120, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "进程", width: 100, minWidth: 100, tooltipField: '进程',
-          maxWidth: 500, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "请求时间", width: 150, minWidth: 150, tooltipField: '请求时间', hide: true,
-          maxWidth: 150, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "响应时间", width: 150, minWidth: 150, tooltipField: '响应时间', hide: true,
-          maxWidth: 150, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "参数", width: 150, minWidth: 150, tooltipField: '参数', hide: true,
-          maxWidth: 2000, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "注释", width: 200, minWidth: 200, tooltipField: '注释', editable: true,
-          maxWidth: 2000, cellStyle: {'text-align': 'left'}
-        },
-        {
-          field: "来源地址", width: 150, minWidth: 150, tooltipField: '来源地址',
-          maxWidth: 200,
-        },
-      ],
-      sideBar: null,
-      //是否跟随显示
-      ListFollowShow: false,
-      PageWidth: {
-        Width: 0,
-        min: 0,
-        max: 0,
-      },
-      agTools: null,
-      FindShow: false,
-      MenuItems: [
-        {
-          name: '复制',
-          subMenu: [
-            {
-              name: '请求地址',
-              action: () => {
-                this.CopyReqHost("请求地址")
-              },
-              disabled: false,
-              visible: true
-            },
-            {
-              name: 'HOST',
-              action: () => {
-                this.CopyReqHost("HOST")
-              },
-              disabled: false,
-              visible: true
-            },
-          ],
-          disabled: false,
-          visible: true
-        },
-        {
-          name: '生成请求代码',
-          subMenu: [
-            {
-              name: '易语言',
-              disabled: false,
-              visible: true,
-              subMenu: [
-                {
-                  name: 'WinInet',
-                  action: () => {
-                    this.GenerateRequestCode("E", 'WinInet')
-                  },
-                  disabled: false,
-                  visible: true
-                },
-                {
-                  name: 'WinHttpW',
-                  action: () => {
-                    this.GenerateRequestCode("E", 'WinHttpW')
-                  },
-                  disabled: false,
-                  visible: true
-                },
-                {
-                  name: 'WinHttpR',
-                  action: () => {
-                    this.GenerateRequestCode("E", 'WinHttpR')
-                  },
-                  disabled: false,
-                  visible: true
-                },
-                {
-                  name: '网页_访问',
-                  action: () => {
-                    this.GenerateRequestCode("E", '网页_访问')
-                  },
-                  disabled: false,
-                  visible: true
-                },
-                {
-                  name: '网页_访问_对象',
-                  action: () => {
-                    this.GenerateRequestCode("E", '网页_访问_对象')
-                  },
-                  disabled: false,
-                  visible: true
-                },
-                {
-                  name: 'E2EE网站客户端',
-                  action: () => {
-                    this.GenerateRequestCode("E", 'e2ee')
-                  },
-                  disabled: false,
-                  visible: true
-                }
-              ],
-            },
-            {
-              name: '火山',
-              disabled: false,
-              visible: true,
-              subMenu: [
-                {
-                  name: 'WinHttpW',
-                  action: () => {
-                    this.GenerateRequestCode("火山", 'WinHttpW')
-                  },
-                  disabled: false,
-                  visible: true
-                }
-              ],
-            },
-            {
-              name: 'GoLang',
-              subMenu: [
-                {
-                  name: 'net/http',
-                  action: () => {
-                    this.GenerateRequestCode('Go', "net/http")
-                  },
-                  disabled: false,
-                  visible: true
-                },
-              ],
-              disabled: false,
-              visible: true
-            },
-            {
-              name: 'C#',
-              subMenu: [
-                {
-                  name: 'HttpClient',
-                  action: () => {
-                    this.GenerateRequestCode('C#', "HttpClient")
-                  },
-                  disabled: false,
-                  visible: true
-                },
-                {
-                  name: 'RestSharp',
-                  action: () => {
-                    this.GenerateRequestCode('C#', "RestSharp")
-                  },
-                  disabled: false,
-                  visible: true
-                },
-              ],
-              disabled: false,
-              visible: true
-            },
-            {
-              name: 'Python',
-              subMenu: [
-                {
-                  name: 'requests',
-                  action: () => {
-                    this.GenerateRequestCode('Python', "requests")
-                  },
-                  disabled: false,
-                  visible: true
-                },
-              ],
-              disabled: false,
-              visible: true
-            }
-          ],
-          disabled: false,
-          visible: true
-        },
-        {
-          name: '颜色标记',
-          subMenu: [
-            {
-              name: '红色',
-              action: () => {
-                this.markerColor("红色")
-              },
-              disabled: false,
-              visible: true
-            },
-            {
-              name: '蓝色',
-              action: () => {
-                this.markerColor("蓝色")
-              },
-              disabled: false,
-              visible: true
-            },
-            {
-              name: '绿色',
-              action: () => {
-                this.markerColor("绿色")
-              },
-              disabled: false,
-              visible: true
-            },
-            {
-              name: '黄色',
-              action: () => {
-                this.markerColor("黄色")
-              },
-              disabled: false,
-              visible: true
-            },
-            {
-              name: '紫色',
-              action: () => {
-                this.markerColor("紫色")
-              },
-              disabled: false,
-              visible: true
-            },
-            'separator',
-            {
-              name: '取消颜色标记',
-              action: () => {
-                this.markerColor("empty")
-              },
-              disabled: false,
-              visible: true
-            },
-            'separator',
-            {
-              name: '取消搜索颜色标记',
-              action: this.CancelSearch,
-              disabled: false,
-              visible: false
-            },
-          ],
-          disabled: false,
-          visible: true
-        },
-        'separator',
-        {
-          name: '删除选择',
-          action: () => {
-            this.delete()
-          },
-          disabled: false,
-          visible: true
-        },
-        'separator',
-        {
-          name: '查找',
-          action: () => {
-            this.$nextTick(() => {
-              window.UI.FindWindow = true
-              window.SetUILevel("FindWindow")
-            })
-          },
-          disabled: false,
-          visible: true
-        },
-        {
-          name: '重发',
-          subMenu: [
-            {
-              name: '普通重发',
-              action: () => {
-                this.resend(3)
-              },
-              disabled: false,
-              visible: true
-            },
-            {
-              name: '重发 并 拦截上行',
-              action: () => {
-                this.resend(1)
-              },
-              disabled: false,
-              visible: true
-            },
-            {
-              name: '重发 并 拦截下行',
-              action: () => {
-                this.resend(2)
-              },
-              disabled: false,
-              visible: true
-            },
-          ],
-          disabled: false,
-          visible: true
-        },
-        'separator',
-        {
-          name: '跟随显示',
-          action: () => {
-            this.ListFollowShow = !this.ListFollowShow
-            window.vm.Header.SetAutoRollShow(this.ListFollowShow)
-          },
-          disabled: false,
-          visible: true,
-          icon: ''
-        },
-        {
-          name: '断开选中的会话连接',
-          action: this.CloseSession,
-          disabled: false,
-          visible: true,
-          icon: ''
-        },
-      ], // 返回自定义的菜单项
+      MoveColumn: false,
       overlayNoRowsTemplate: `<span style="padding: 20px;" id="HookMessageText">还没有捕获到数据</span>`,
-      get darkTheme() {
-        return window.Theme.IsDark
+      sideBar: {
+        toolPanels: [
+          {
+            id: 'reqs',
+            labelDefault: '请求数据',
+            labelKey: 'customStats',
+            iconKey: 'linked',
+            toolPanel: 'reqsPanel',
+            minWidth: 400,
+            width: 600,
+          },
+          {
+            id: 'columns',//这个列看不见,因为我隐藏了面板，所以无所谓了,但是不能删，删了就不对，如果删除了，请求数据面板就，找不到一些样式
+            labelDefault: '列调整',
+            labelKey: 'columns',
+            iconKey: 'columns',
+            toolPanel: 'agColumnsToolPanel',
+            width: 200,
+            minWidth: 200,
+            maxWidth: 200,
+            hide: true,
+            toolPanelParams: {
+              suppressRowGroups: true,
+              suppressValues: true,
+              suppressPivots: true,
+              suppressPivotMode: true,
+              suppressColumnFilter: true,
+              suppressColumnSelectAll: true,
+              suppressColumnExpandAll: true,
+            },
+          },
+        ],
+        defaultToolPanel: '',//reqs
       },
-      set darkTheme(newValue) {
-        window.Theme.IsDark = newValue
-      },
-    };
-  },
-  methods: {
-    CopyReqHost(mode) {
-      let obj = ""
-      for (let i = 0; i < this.agSelectedArray.length; i++) {
-        const uri = "" + this.agSelectedArray[i].data[mode]
-        if (obj === "") {
-          obj = uri
-        } else {
-          obj += "\r\n" + uri
-        }
-      }
-      if (obj !== "") {
-        ClipboardSetText(obj)
-        ElMessage({
-          message: "复制成功！",
-          type: 'success',
-        })
-      } else {
-        ElMessage({
-          message: "您还没有选择请求",
-          type: 'error',
-        })
-      }
+      FilterColumn: [],
+      ResendRequestCountShow: false,
+      ResendRequestCount: 1,
+      IsWindows: false,
+      gridOptions: {
+        enableAdvancedFilter: true,
+        suppressMovableColumns: true,
+        onContextMenuVisibleChanged: (event) => {
+          Config_MenuVisible.value = event.visible;
+        },
+        getRowId: (params) => {
+          return String(params.data.Theology)
+        },
+        stopEditingWhenCellsLoseFocus: true, // 失去焦点时自动结束编辑
+        columnDefs: [
+          {
+            field: "序号", tooltipField: '序号',
+            minWidth: 85,
+            width: 85,
+            maxWidth: 85,
+            menuTabs: [], // 不显示过滤器
+            pinned: "left",
+            valueGetter: (params) => {
+              if (!this.isGoFilter) {
+                return params.node.rowIndex + 1;
+              }
+              let pso = params.node.data.rowIndex;
+              if (pso) {
+                return pso + 1;
+              }
+              this.agGridApi.forEachNode((node, index) => {
+                if (node === params.node) {
+                  params.node.data.rowIndex = index;
+                }
+              });
+              return params.node.data.rowIndex + 1;
+            },
+            cellRenderer: 'ImageRenderer',
+            cellStyle: {'text-align': 'left'},
+            suppressFiltersToolPanel: true,
+            suppressColumnsToolPanel: true,
+          },
+          {
+            field: 'Theology',
+            hide: true, // 不显示
+            suppressColumnsToolPanel: true, // 不在“列面板”中显示
+            suppressFiltersToolPanel: true, // 不在“过滤面板”中显示
+            suppressMovable: true,          // 不可被拖拽
+            suppressSizeToFit: true,        // 不随容器缩放
+            suppressHeaderKeyboardEvent: true, // 禁用 header 的交互
+            suppressHeaderContextMenu: true,   // 禁止右键菜单
+            sortable: true, //（可选）仍然可以参与排序
+            filter: false   //（可选）不允许筛选
+          },
+          {
+            field: "方式", tooltipField: '方式',
+            minWidth: 80,
+            width: 100,
+            filter: true,
+            maxWidth: 120, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "状态", tooltipField: '状态',
+            minWidth: 90,
+            width: 90,
+            filter: true,
+            maxWidth: 90, cellStyle: {'text-align': 'center'}
+          },
+          {
+            field: "主机名", width: 120, minWidth: 120, tooltipField: '主机名', hide: true,
+            filter: true,
+            maxWidth: 500, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "路径", width: 200, minWidth: 200, tooltipField: '路径', hide: true,
+            filter: true,
+            maxWidth: 2000, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "请求地址", width: 400, minWidth: 200, tooltipField: '请求地址',
+            filter: true,
+            maxWidth: 2000, cellStyle: {'text-align': 'left'},
+          },
+          {
+            field: "响应长度", width: 120, minWidth: 120, tooltipField: '响应长度',
+            filter: true,
+            maxWidth: 120, cellStyle: {'text-align': 'left'},
+          },
+          {
+            field: "响应类型", width: 120, minWidth: 120, tooltipField: '响应类型',
+            filter: true, hide: true,
+            maxWidth: 120, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "进程", width: 100, minWidth: 100, tooltipField: '进程',
+            filter: true,
+            maxWidth: 500, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "注释", width: 200, minWidth: 200, tooltipField: '注释', editable: true,
+            filter: true,
+            maxWidth: 2000, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "请求时间", width: 150, minWidth: 150, tooltipField: '请求时间', hide: true,
+            filter: true,
+            maxWidth: 150, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "响应时间", width: 150, minWidth: 150, tooltipField: '响应时间', hide: true,
+            filter: true,
+            maxWidth: 150, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "来源地址", width: 150, minWidth: 150, tooltipField: '来源地址',
+            filter: true,
+            maxWidth: 200,
+          },
+          {
+            field: "响应IP", width: 150, minWidth: 150, tooltipField: '响应IP',
+            filter: true,
+            maxWidth: 150, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "身份验证账号", width: 150, minWidth: 150, tooltipField: '身份验证账号', hide: true,
+            filter: true,
+            maxWidth: 150, cellStyle: {'text-align': 'left'}
+          },
+          {
+            field: "参数", width: 150, minWidth: 150, tooltipField: '参数', hide: true,
+            filter: true,
+            maxWidth: 2000, cellStyle: {'text-align': 'left'}
+          },
+        ],
+        localeText: AG_GRID_LOCALE_CN,
+        getContextMenuItems: this.MenuEvent,
+        onCellSelectionChanged: (params) => {
+          if (params.started) {
+            this.agSelectedRowNodes.forEach((node) => {
+              node.setSelected(false);
+            });
+          }
+          if (params.finished) {
+            const rangeSelections = params.api.getCellRanges();
+            const selectedRowNodes = [];
+            let ___c = true;
+            rangeSelections.forEach(function (range) {
+              const _a = range.startRow.rowIndex;
+              const _b = range.endRow.rowIndex;
 
-    },
-    sendToClipboard(params) {
-      ClipboardSetText(params.data)
-    },
-    SetEmptySearchMenuVisible(value) {
-      this.MenuItems[2].subMenu[8].visible = value
-    },
-    CancelSearch() {
-      this.SetEmptySearchMenuVisible(false)
-      CallGoDo("取消搜索颜色标记", null).then((res) => {
-        if (res) {
-          for (let i = 0; i < res.length; i++) {
-            const LastSearchResult = res[i]
-            const obj = window.vm.List.RowDataHashMap[LastSearchResult]
-            if (obj) {
-              obj.data.color.search = null
-              obj.setData(obj.data)
+              let startRow = _a;
+              let endRow = _b;
+              if (_a > _b) {
+                startRow = _b
+                endRow = _a
+                ___c = false;
+              } else {
+                ___c = true;
+              }
+              params.api.forEachNodeAfterFilter(function (node) {
+                if (node.rowIndex >= startRow && node.rowIndex <= endRow) {
+                  selectedRowNodes.push(node);
+                  node.setSelected(true);
+                }
+              });
+            });
+            if (selectedRowNodes.length > 0) {
+              if (!___c) {
+                Config_SelectedRow.value = selectedRowNodes[0].data
+              } else {
+                Config_SelectedRow.value = selectedRowNodes[selectedRowNodes.length - 1].data
+              }
+              this.agGridApi.openToolPanel("reqs");
+            } else {
+              Config_SelectedRow.value = [];
             }
+            this.agSelectedRowNodes = selectedRowNodes;
           }
+        },
+        onModelUpdated: this.onModelUpdated,
+        getRowStyle: this.onGetRowStyle,
+        isExternalFilterPresent: this.isExternalFilterPresent,
+        doesExternalFilterPass: this.doesExternalFilterPass,
+        onColumnVisible: this.onColumnVisible,
+        onColumnMoved: this.saveColumn,
+        onColumnResized: this.saveColumn,
+        onCellEditingStopped: (params) => {
+          const _Theology = parseInt(params.data["Theology"])
+          UpdateNote(_Theology, params.data["注释"]).then((isShow) => {
+            this.addFilter(_Theology, isShow)
+            this.agGridApi.applyTransaction({update: [params.data]});
+          })
+        },
+        onFilterChanged: () => {
+          this.agGridApi.refreshCells({
+            columns: ['序号'],
+            force: true
+          });
         }
-        this.agSelectedLine = null
-        this.RefreshRenderedNodes()
-        this.$nextTick(() => {
-          this.agSelectedLine = this.RowDataHashMap[window.Theology]
-        })
-      })
+      },
+      gridSideBar: {},
+      cellSelection: {
+        suppressMultiRanges: true,
+      },
+      rowSelection: {
+        mode: 'multiRow',
+        checkboxes: false,
+        headerCheckbox: false,
+        copySelectedRows: false,
+        enableClickSelection: true,
+      },
+      IsShowNoRowsOverlay: true,//是否显示没有行的提示信息
+      debounceTimer: null,
+      textMark: new Map(),
+      get isDisableClick() {
+        return DisableClick.value
+      },
+      set isDisableClick(v) {
+        DisableClick.value = v
+      },
+      get IsDark() {
+        return Config_IsDark.value
+      },
+      set IsDark(v) {
+        Config_IsDark.value = v
+      }
+    }
+  },
+  computed: {
+    agTheme() {
+      return Config_Theme_agGrid.value
     },
-    //隐藏工具面板
-    HideToolsPanel() {
-      // 创建一个 <style> 元素节点
-      const styleElement = document.createElement('style');
-      // 定义 CSS 规则
-      const cssRules = `.ag-side-buttons {
-                        padding-top: calc(var(--ag-grid-size) * 4);
-                        width: 0;
-                        position: relative;
-                        overflow: hidden;
-                        }`;
-      // 将 CSS 规则写入 <style> 元素
-      styleElement.innerHTML = cssRules;
-      // 将 <style> 元素节点附加到文档的 <head> 元素中
-      document.head.appendChild(styleElement);
-    }
-    ,
-    updateWindowSize() {
-      this.PageWidth.Width = window.innerWidth * 0.3;
-      this.PageWidth.max = window.innerWidth - 50;
-      this.PageWidth.min = 620//window.innerWidth * 0.3;
-      if (this.PageWidth.Width < this.PageWidth.min) {
-        this.PageWidth.Width = this.PageWidth.min
-      }
-      if (this.PageWidth.Width > this.PageWidth.max) {
-        this.PageWidth.Width = this.PageWidth.max
-      }
-      for (let i = 0; i < this.sideBar.toolPanels.length; i++) {
-        this.sideBar.toolPanels[i].width = this.PageWidth.Width
-      }
-      this.handleMouseMove()
-    }
-    ,
-    getTools() {
-      for (let i = 0; i < this.agTools.length; i++) {
-        if (this.agTools[i].className.indexOf("ag-hidden") === -1) {
-          return this.agTools[i]
+    isNoDisableClick() {
+      return (this.isDisableClick ? "pointer-events: none;" : "") + "width: 100%;height: 100%"
+    },
+  },
+  mounted() {
+    this.agGridApi = this.$refs.agGrid.api;
+    this.agGridApiMain = this.$refs.agGridSide.api
+    {
+
+      GOOS().then((IsWindows) => {
+        this.IsWindows = IsWindows;
+        let ToolsWidth = 200;
+        let ToolsMaxWidth = 400;
+        if (!IsWindows) {
+          ToolsWidth = 100;
+          ToolsMaxWidth = 100;
         }
-      }
-      return null
-    }
-    ,
-    RefreshColumns(Columns) {
-      this.$nextTick(() => {
-        console.log(Columns);
-        window.vm.List.$refs.agGrid.gridOptions.columnApi.applyColumnState({
-          state: Columns,
-          applyOrder: true,
-        });
+        const sideBar = {
+          toolPanels: [
+            {
+              id: 'Settings',
+              labelDefault: '设置',
+              labelKey: 'Settings',
+              iconKey: 'settings',
+              toolPanel: 'Settings',
+              minWidth: 400,
+              width: 400,
+              maxWidth: 400,
+            },
+            {
+              id: 'Tools',
+              labelDefault: '常用工具',
+              labelKey: 'customStats',
+              iconKey: 'aggregation',
+              toolPanel: 'toolsSideBar',
+              minWidth: ToolsWidth,
+              width: ToolsWidth,
+              maxWidth: ToolsMaxWidth,
+            },
+            {
+              id: 'GoCodeLog',
+              labelDefault: '脚本日志',
+              labelKey: 'customStats',
+              iconKey: 'eye',
+              toolPanel: 'ScriptLogSideBar',
+              minWidth: 40,
+              width: 400,
+              maxWidth: 400,
+            },
+          ],
+          position: 'left',
+          defaultToolPanel: '',//默认不打开，如果需要打开 例如添加 id [Tools]
+        }
+        sideBar.toolPanels.push(
+            {
+              id: 'Device',
+              labelDefault: '驱动加载',
+              labelKey: 'customStats',
+              iconKey: 'linked',
+              toolPanel: 'Device',
+              minWidth: 400,
+              width: 400,
+              maxWidth: 400,
+            })
+        this.agGridApiMain.setGridOption('sideBar', sideBar);
       })
     }
-    ,
-    handleMouseMove(event) {
-      return;
+    Config_agGrid_API.value = this.$refs.agGrid.api;
+    this.agGridApi.setSideBarPosition('right')
+    this.onColumnVisible()
+    registerThisObject("registerDropFiles", (el, path) => {
+      if (!path.toLowerCase().endsWith(".sy4")) {
+        ElNotification({
+          position: 'bottom-right',
+          message: '打开记录文件失败\n\n文件格式不正确！',
+          type: 'warning',
+          customClass: 'multiline-message'
+        })
+        return;
+      }
+      this.openSy4File(path)
+    })
+    registerThisObject("HomeListRefresh", this.RefreshVisibleNodes)
+    registerThisObject("ColorMarking", () => this.ColorMarking('Clear'))
+    registerThisObject("MCPRowRefresh", (theology) => {
+      const th = parseInt(theology, 10);
+      const cur = parseInt(Config_SelectedRow.value?.Theology ?? "0", 10);
+      if (!Number.isFinite(th) || th !== cur) {
+        return;
+      }
+      const api = Config_agGrid_API.value;
+      const node = api?.getRowNode(String(th));
+      if (!api || !node) {
+        return;
+      }
+      api.deselectAll();
+      api.clearCellSelection();
+      this.agSelectedRowNodes = [];
+      Config_SelectedRow.value = [];
+      this.$nextTick(() => {
+        node.setSelected(true);
+        this.agSelectedRowNodes = [node];
+        Config_SelectedRow.value = node.data;
+        api.ensureNodeVisible(node);
+      });
+    })
+    registerHotkeyFunction(Keys_System_id_ResendRequest, this.OpenResendRequest)
+    {
+      // 监听键盘按键事件
+      document.addEventListener("keydown", (event) => {
+        const placeholder = event.target.getAttribute('placeholder') + ""
+        if (placeholder === "请按下快捷键") {
+          return;
+        }
+        // 检测是否按下 Ctrl + F 组合键
+        if (event.ctrlKey && event.key === "f") {
+          // 如果焦点在 Monaco Editor 中，则不执行后续逻辑
+          if (event.target.closest(".monaco-editor")) {
+            return;
+          }
+          // 获取需要聚焦的输入元素（如果不存在，则调用 setFocusElement 获取）
+          const focusElement = Config_Focus_Element.value ?? this.$refs.Filter.setFocusElement();
+          // 如果找到了可用的输入框，则进行聚焦并触发点击事件
+          if (focusElement) {
+            focusElement.focus();
+            focusElement.click();
+          }
+          return;
+        }
+        keydownEventListener(event)
+      });
+    }
+    {
+      // 获取 AG Grid 的根容器
+      const gridRoot = document.querySelector("[data-ref='eGridRoot']");
+      if (gridRoot) {
+        // 清空右侧内容，仅保留左侧面板
+        gridRoot.innerHTML = "";
+        gridRoot.appendChild(this.$refs.agGrid.$el);
+        gridRoot.id = "appMain"; // 重新赋 ID
+        this.agGridApi.setGridOption("popupParent", gridRoot.parentElement)
+      }
+      // 隐藏侧边栏按钮（ag-side-buttons）
+      const sideButtons = this.$refs.agGrid.$el.getElementsByClassName("ag-side-buttons");
+      for (const buttonContainer of sideButtons) {
+        if (buttonContainer.childNodes.length > 0) {
+          buttonContainer.style.display = "none";
+        }
+      }
+    }
+    setTimeout(this.isInstallCert, 10)
+    const style = document.createElement('style');
+    style.textContent = `
+  .ag-chart-tabbed-menu-body::after {
+    display: none !important;
+  }
+`;
+    document.head.appendChild(style);
+    Events.On("mcp", async (evt) => {
+      const mcp = evt?.data ?? {};
+      // 统一回包：确保只要进到 handler，就能在需要时返回
+      const reply = (text) => {
+        mcp.res = text;
+        typeof McpFuncRes === "function" && McpFuncRes(mcp);
+      };
       try {
-        const tools = this.getTools()
-        if (tools != null) {
-          if (window.ToolsMaximize === true) {
-            tools.style.width = window.innerWidth + "px"
-            return
+        const page = String(mcp.page ?? "").toLowerCase();
+        const tag = String(mcp.tag ?? "").toLowerCase();
+        if (page !== "main") return;
+        switch (tag) {
+          case "rowrefresh": {
+            const body = JSON.parse(String(mcp.msg ?? "{}"));
+            const th = parseInt(body.theology, 10);
+            const fn = getThisObject("MCPRowRefresh");
+            if (typeof fn === "function" && Number.isFinite(th)) {
+              fn(th);
+            }
+            return reply("ok");
           }
-          const w = parseInt(tools.style.width.replace('px', ''))
-          if (w < this.PageWidth.min) {
-            tools.style.width = this.PageWidth.min + "px"
+          case "rowupdatesend": {
+            const body = JSON.parse(String(mcp.msg ?? "{}"));
+            const fn = getThisObject("MCPApplyHttpSendRowUpdate");
+            if (typeof fn === "function") {
+              fn(body);
+            }
+            return reply("ok");
           }
-          if (w > this.PageWidth.max) {
-            tools.style.width = this.PageWidth.max + "px"
+          case "rowmark": {
+            const body = JSON.parse(String(mcp.msg ?? "{}"));
+            const mark = body.mark ?? "";
+            const ids = Array.isArray(body.ids) ? body.ids : [];
+            for (const id of ids) {
+              const th = parseInt(id, 10);
+              if (Number.isFinite(th) && th !== 0) {
+                this.textMark.set(th, mark);
+              }
+            }
+            this.RefreshVisibleNodes();
+            return reply("已标记 " + ids.length + " 行");
           }
+          case "rownote": {
+            const body = JSON.parse(String(mcp.msg ?? "{}"));
+            const note = body.note ?? "";
+            const ids = Array.isArray(body.ids) ? body.ids : [];
+            const api = Config_agGrid_API.value;
+            if (!api) {
+              return reply("已更新 0 行注释");
+            }
+            const updates = [];
+            for (const id of ids) {
+              const th = parseInt(id, 10);
+              if (!Number.isFinite(th) || th === 0) {
+                continue;
+              }
+              const rowNode = api.getRowNode(String(th));
+              if (!rowNode) {
+                continue;
+              }
+              rowNode.data["注释"] = note;
+              updates.push(rowNode.data);
+              UpdateNote(th, note).then((isShow) => {
+                this.addFilter(th, isShow);
+              });
+            }
+            if (updates.length > 0) {
+              api.applyTransaction({update: updates});
+            }
+            return reply("已更新 " + updates.length + " 行注释");
+          }
+          case "listindextotheology": {
+            let want = null;
+            try {
+              const parsed = JSON.parse(String(mcp.msg ?? "[]"));
+              if (Array.isArray(parsed)) {
+                want = new Set(
+                    parsed.map((x) => parseInt(x, 10)).filter((n) => n > 0),
+                );
+              }
+            } catch (_) {
+              return reply("{}");
+            }
+            const out = {};
+            const api = Config_agGrid_API.value;
+            if (!api) {
+              return reply("{}");
+            }
+            // 遍历全部行（含被过滤器隐藏的行），序号与 rowIndex+1 一致
+            api.forEachNode((node) => {
+              const listIndex = node.rowIndex + 1;
+              if (want === null || want.size === 0 || want.has(listIndex)) {
+                const th = parseInt(node.data["Theology"], 10);
+                out[listIndex] = Number.isFinite(th) ? th : 0;
+              }
+            });
+            if (want !== null && want.size > 0) {
+              for (const k of want) {
+                if (!(k in out)) {
+                  out[k] = 0;
+                }
+              }
+            }
+            return reply(JSON.stringify(out));
+          }
+          case "breakrelease": {
+            const body = JSON.parse(String(mcp.msg ?? "{}"));
+            const ids = Array.isArray(body.ids) ? body.ids : [];
+            const mode = parseInt(body.mode ?? 0, 10);
+            const api = Config_agGrid_API.value;
+            for (const id of ids) {
+              const th = parseInt(id, 10);
+              if (!Number.isFinite(th)) {
+                continue;
+              }
+              const rowNode = api?.getRowNode(String(th));
+              if (rowNode?.data) {
+                rowNode.data["断点模式"] = mode;
+                SetRequestNextBreakMode(th, mode);
+              }
+            }
+            if (ids.length > 0) {
+              Config_HTTP_Message_free(
+                  ids.map((x) => parseInt(x, 10)).filter((n) => Number.isFinite(n)),
+              );
+            }
+            api?.refreshCells({columns: ["断点模式"], force: true});
+            return reply("ok");
+          }
+          case "breakreleaseall":
+            FreeAllRequest();
+            Config_HTTP_Message_free(Config_SelectedRow.value ?? []);
+            Config_agGrid_API.value?.refreshCells({columns: ["断点模式"], force: true});
+            return reply("ok");
+          case "enginestatus": {
+            const msg = JSON.parse(String(mcp.msg ?? "{}"));
+            if (msg.running != null) {
+              Config_SunnyNetIsStart.value = !!msg.running;
+            }
+            if (msg.statusText != null) {
+              Config_Status_Info.value = String(msg.statusText);
+            }
+            return reply("ok");
+          }
+          case "recordsimport": {
+            const body = JSON.parse(String(mcp.msg ?? "{}"));
+            const rows = Array.isArray(body.rows) ? body.rows : [];
+            if (rows.length > 0 && this.$refs.listen) {
+              this.$refs.listen.insertArray(rows, true, () => {});
+            }
+            return reply("ok");
+          }
+          case "delreq":
+            const msg = JSON.parse(String(mcp.msg ?? ""));
+            const arrayID = []
+            const array = []
+            for (const item of msg) {
+              arrayID.push(parseInt(item))
+              const rowNode = Config_agGrid_API.value.getRowNode(item + "");
+              if (rowNode) {
+                array.push(rowNode.data)
+                rowNode.setSelected(false);
+              }
+            }
+            AppDeleteSession(arrayID).then(() => {
+              this.agGridApi.applyTransaction({remove: array});
+              this.agSelectedRowNodes = []
+              Config_SelectedRow.value = [];
+              this.agGridApi.clearCellSelection();
+              this.agGridApi.refreshCells({
+                columns: ['序号'],
+                force: true,
+                suppressFlash: true, // 不需要闪烁动画，可以不加
+              });
+            })
+            return reply("成功删除 " + arrayID.length + "条 记录");
+          default:
+            return;
         }
       } catch (e) {
-      }
-    }
-    ,
-    handleKeyDown(event) {
-      const mKey = event.key.toUpperCase()
-      const FindObjs = window.KeysStrings["搜索/查找"]
-      const copyObjs = window.KeysStrings["复制"]
-      const releaseAllObjs = window.KeysStrings["全部放行"]
-      const releaseObjs = window.KeysStrings["放行当前请求"]
-      const proxyObjs = window.KeysStrings["设置/取消IE代理"]
-      const ClearAllObjs = window.KeysStrings["清空全部记录"]
-      if (event.ctrlKey === ClearAllObjs.ctrlKey && event.altKey === ClearAllObjs.altKey && event.shiftKey === ClearAllObjs.shiftKey && mKey === ClearAllObjs.key) {
-        if (ClearAllObjs.value === "") {
-          return;
+        try {
+          reply("处理失败");
+        } catch (_) {
         }
-        window.vm.Header.clickRemoveAll(1)
-        return
       }
-      if (event.ctrlKey === proxyObjs.ctrlKey && event.altKey === proxyObjs.altKey && event.shiftKey === proxyObjs.shiftKey && mKey === proxyObjs.key) {
-        if (proxyObjs.value === "") {
-          return;
+    });
+  },
+  methods: {
+    setIsInstallCertDrag() {
+      requestAnimationFrame(() => {
+        const messageBox = document.getElementsByClassName("el-overlay-message-box");
+        if (messageBox.length > 0) {
+          if (messageBox[0]) {
+            messageBox[0].style = "--wails-draggable: drag"
+            return
+          }
         }
-        window.vm.IEProxy.Click()
-        return
-      }
-      if (event.ctrlKey === releaseObjs.ctrlKey && event.altKey === releaseObjs.altKey && event.shiftKey === releaseObjs.shiftKey && mKey === releaseObjs.key) {
-        if (releaseObjs.value === "") {
-          return;
-        }
-        window.vm.Tabs.ToolPanel.ReleaseBreak()
-        return
-      }
-      if (event.ctrlKey === releaseAllObjs.ctrlKey && event.altKey === releaseAllObjs.altKey && event.shiftKey === releaseAllObjs.shiftKey && mKey === releaseAllObjs.key) {
-        if (releaseAllObjs.value === "") {
-          return;
-        }
-        window.vm.Header.ReleaseAll()
-        return
-      }
-      if (event.ctrlKey === FindObjs.ctrlKey && event.altKey === FindObjs.altKey && event.shiftKey === FindObjs.shiftKey && mKey === FindObjs.key) {
-        if (FindObjs.value === "") {
-          return;
-        }
-        window.UI.FindWindow = false
-        this.$nextTick(() => {
-          window.UI.FindWindow = true
-          window.SetUILevel("FindWindow")
-          this.$nextTick(() => {
-            window.vm.Find.SetFocus()
-          })
+        this.setIsInstallCertDrag()
+      })
+    },
+    isInstallCert() {
+      requestAnimationFrame(() => {
+        const obj = document.getElementById('rootList')
+        const loading = ElLoading.service({
+          lock: true,
+          text: '正在检测是否已经安装 SunnyNet 证书',
+          background: 'rgba(0, 0, 0, 0.7)',
+          target: obj,
         })
-        return
-      }
-      if (event.ctrlKey === copyObjs.ctrlKey && event.altKey === copyObjs.altKey && event.shiftKey === copyObjs.shiftKey && mKey === copyObjs.key) {
-        if (copyObjs.value === "") {
-          return;
-        }
-        if (this.IsListDomRange) {
-
-          if (this.agSelectedArray.length > 0) {
-            this.agGridApi.copySelectedRangeToClipboard();
-            ElMessage({
-              message: "复制成功！",
-              type: 'success',
+        AppCheckSunnyNet().then((isInstall) => {
+          if (isInstall) {
+            loading.close()
+          } else {
+            this.setIsInstallCertDrag()
+            ElMessageBox.confirm('当前系统中未发现 SunnyNet 证书<br>部分功能可能异常！！<br>是否立即查看证书安装教程？', '证书未安装', {
+              // if you want to disable its autofocus
+              // autofocus: false,
+              confirmButtonText: '立即查看',
+              cancelButtonText: '关闭这个提醒',
+              dangerouslyUseHTMLString: true,
+              closeOnClickModal: false,     // 禁止点击遮罩关闭
+              closeOnPressEscape: false,    // 可选：禁止按 ESC 关闭
+              showClose: false              // 可选：不显示右上角关闭按钮
+            }).then(() => {
+              GetPort().then(port => {
+                const url = 'http://localhost:' + port + '/install.html'
+                OpenTools("证书安装", true, url)
+                ElNotification({
+                  position: 'bottom-right',
+                  message: 'SunnyNet 证书未安装！\n\n部分功能可能异常！！',
+                  type: 'warning',
+                  customClass: 'multiline-message'
+                })
+                loading.close()
+              })
+            }).catch(() => {
+              ElNotification({
+                position: 'bottom-right',
+                message: 'SunnyNet 证书未安装！\n\n部分功能可能异常！！',
+                type: 'warning',
+                customClass: 'multiline-message'
+              })
+              loading.close()
             })
+
+
           }
+        })
+      })
+    },
+    ExportMessage(ids) {
+      SaveSunnyFile("").then((selectedFiles, err) => {
+        if (selectedFiles === "") {
+          return
         }
-      }
-    }
-    ,
-    onRangeSelectionChanged(event) {
-      const rangeSelections = event.api.getCellRanges();
-      const selectedRowNodes = [];
+        ElNotification({
+          position: 'bottom-right',
+          showClose: true,
+          message: '正在保存记录到文件...\n这可能需要一定时间...',
+          type: 'success',
+          customClass: 'multiline-message'
+        })
+        Config_IsShowExportProgress.value = "请稍后,正在保存记录"
+        AppExport(ids, selectedFiles).then((err) => {
+          Config_IsShowExportProgress.value = ""
+          if (err === "") {
+            ElNotification({
+              position: 'bottom-right',
+              message: '导出成功！',
+              type: 'success',
+              customClass: 'multiline-message'
+            })
+            return
+          }
+          ElNotification({
+            position: 'bottom-right',
+            message: '导出失败！\n\n' + err,
+            type: 'warning',
+            customClass: 'multiline-message'
+          })
+        }).catch((error) => {
+          ElNotification({
+            position: 'bottom-right',
+            message: '导出失败！',
+            type: 'warning',
+            customClass: 'multiline-message'
+          })
+        });
+      }).catch((error) => {
+        ElNotification({
+          position: 'bottom-right',
+          message: '保存记录失败\n\n未选择文件！',
+          type: 'warning',
+          customClass: 'multiline-message'
+        })
+      });
+    },
+    setSelectedRow(addRows, GuaranteeDisplay) {
+      // 清除之前选中的行
+      this.agSelectedRowNodes.forEach((node) => {
+        node.setSelected(false);
+      });
+      const rangeSelections = this.agGridApi.getCellRanges();
+      const colIds = [];
       rangeSelections.forEach(function (range) {
-        const _a = range.startRow.rowIndex;
-        const _b = range.endRow.rowIndex;
-        let startRow = _a;
-        let endRow = _b;
-        if (_a > _b) {
-          startRow = _b
-          endRow = _a
-        }
-        event.api.forEachNodeAfterFilter(function (node) {
-          if (node.rowIndex >= startRow && node.rowIndex <= endRow) {
-            selectedRowNodes.push(node);
-          }
+        range.columns.forEach(function (column) {
+          colIds.push(column.colId);
         });
       });
-      this.agSelectedArray = selectedRowNodes;
-    }
-    ,
-    onRowClicked(params) {
-      if (this.colId === "注释") {
+
+      let targetNode = null;
+      for (let i = 0; i < addRows.length; i++) {
+        const node = addRows[i];
+        if (node.data.Theology === GuaranteeDisplay) {
+          targetNode = node;
+          this.agSelectedRowNodes = [node];
+          Config_SelectedRow.value = node.data;
+          this.agGridApi.ensureNodeVisible(node);
+          node.setSelected(true);
+          break;
+        }
+      }
+      if (!targetNode) return;
+      this.agGridApi.clearCellSelection();
+      this.agGridApi.addCellRange({
+        rowStartIndex: targetNode.rowIndex,
+        rowEndIndex: targetNode.rowIndex,
+        columns: colIds,
+      });
+      this.agGridApi.setFocusedCell(targetNode.rowIndex, colIds);
+    },
+    saveColumn() {
+      if (Config_SunnyNetIsStart.value) {
+        clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(() => {
+          const colState = this.agGridApi.getColumnState();
+          SetColumnState(JSON.stringify(colState))
+        }, 1000);
+      }
+    },
+    CancelSearch() {
+      this.isSearch = false;
+      this.GoSearchList.clear();
+      this.agGridApi.onFilterChanged()
+    },
+    SearchDone(params, mode, Color, isCancelColor) {
+      if (mode === "hide") {
+        this.isSearch = true;
+        for (let i = 0; i < params.length; i++) {
+          this.GoSearchList.add(params[i])
+        }
+        this.agGridApi.onFilterChanged()
+        Config_Find_Window_Hide.value()
         return
       }
-      let array = []
-      if (this.agSelectedLine) {
-        const obj = this.RowDataHashMap[this.agSelectedLine.data.Theology]
-        if (obj) {
-          if (obj.data.color) {
-            obj.data.color.selected = {}
-          } else {
-            obj.data.color = {selected: {}}
-          }
-          array.push(obj)
-        }
-      }
-      this.agSelectedLine = params.node
-      const obj = this.RowDataHashMap[this.agSelectedLine.data.Theology]
-      if (obj) {
-        const selectedColor = {dark: '#1b5168', right: "#b0c5cc"}
-        if (obj.data.color) {
-          obj.data.color.selected = selectedColor
-        } else {
-          obj.data.color = {selected: selectedColor}
-        }
-        array.push(obj)
-      }
-
-      this.$nextTick(() => {
-        this.RefreshRenderedNodes()
-        //this.agGridApi.refreshCells({rowNodes: array, force: true})
-      })
-    }
-    ,
-    CellValueChanged(event) {
-      const newValue = event.newValue;
-      const Theology = event.data['Theology'];
-      CallGoDo("更新注释", {Theology: Theology, Data: newValue})
-    }
-    ,
-    onCellFocused(event) {
-      this.colId = event.column.colId
-    }
-    ,
-    onContextMenuItems(params) {
-      if (this.agSelectedArray.length < 1) {
-        this.MenuItems[0].visible = false
-        this.MenuItems[1].visible = false
-        this.MenuItems[2].visible = false
-        this.MenuItems[4].visible = false
-        this.MenuItems[6].visible = false
-        this.MenuItems[7].visible = false
-        this.MenuItems[9].visible = true
-        this.MenuItems[10].visible = false
-        return getMenuItems(this.MenuItems)
-      } else {
-        this.MenuItems[0].visible = true
-        this.MenuItems[1].visible = true
-        this.MenuItems[2].visible = true
-        this.MenuItems[4].visible = true
-        this.MenuItems[6].visible = true
-        this.MenuItems[7].visible = true
-        this.MenuItems[9].visible = true
-      }
-      this.onRowClicked(params)
-      this.onContextMenu();
-      return getMenuItems(this.MenuItems)
-    }
-    ,
-    onContextMenu() {
-      let ok = false
-      let showCF = true
-      for (let i = 0; i < this.agSelectedArray.length; i++) {
-        if (this.agSelectedArray[i].data) {
-          const fs = ("" + this.agSelectedArray[i].data['方式']).toUpperCase()
-          const zt = ("" + this.agSelectedArray[i].data['状态']).toUpperCase()
-          if (fs.indexOf("TCP") !== -1 || fs.indexOf("UDP") !== -1 || fs.indexOf("WEBSOCKET") !== -1) {
-            showCF = false
-          }
-          if (fs.indexOf("TCP") !== -1 && zt.indexOf("已连接") !== -1) {
-            ok = true
-            break
-          }
-
-          if (fs.indexOf("WEBSOCKET") !== -1 && zt.indexOf("已连接") !== -1) {
-            ok = true
-            break
-          }
-        }
-      }
-
-      if (this.MenuItems.length > 8) {
-        this.MenuItems[1].visible = showCF
-        this.MenuItems[7].visible = showCF
-        this.MenuItems[10].visible = ok
-      }
-    }
-    ,
-    onColumnChange(event) {
-      if (event.type === "columnVisible") {
-        let key = event.column.colId;
-        if (event.visible === false) {
-          const filterModel = window.vm.List.agGridApi.getFilterModel();
-          for (const colId in filterModel) {
-            if (colId === key) {
-              window.vmFilterTemp[key] = filterModel[colId];
-              break
-            }
-          }
-          const responseTypeFilter = this.agGridApi.getFilterInstance(key);
-          responseTypeFilter.setModel(null);
-        } else {
-          const responseTypeFilter = this.agGridApi.getFilterInstance(key);
-          responseTypeFilter.setModel(window.vmFilterTemp[key]);
-        }
-        window.vm.List.agGridApi.onFilterChanged();
-      }
-
-    }
-    ,
-    GenerateRequestCode(Lang, module) {
       const array = []
-      for (let i = 0; i < this.agSelectedArray.length; i++) {
-        array.push(this.agSelectedArray[i].data['Theology'])
-      }
-      CallGoDo("创建请求代码", {Data: array, Lang: Lang, Module: module})
-    }
-    ,
-    NewColumnsLoaded(params) {
-      this.onRangeSelectionChanged(params)
-      if (this.ListFollowShow) {
-        const rowCount = this.agGridApi.getDisplayedRowCount() - 1
-        if (rowCount > -1) {
-          this.rowIndex = rowCount
-          this.agGridApi.ensureIndexVisible(rowCount)
+      if (isCancelColor) {
+        const mm = new Map();
+        for (let i = 0; i < params.length; i++) {
+          const node = this.agGridApi.getRowNode(params[i] + "");
+          if (node) {
+            node.data.backcolor = Color;
+            array.push(node)
+            mm.set(parseInt(node.data["Theology"]), node)
+          }
+        }
+        this.agGridApi.forEachNode((node) => {
+          if (!mm.has(parseInt(node.data["Theology"]))) {
+            node.data.backcolor = "";
+            array.push(node)
+          }
+        });
+      } else {
+        for (let i = 0; i < params.length; i++) {
+          const node = this.agGridApi.getRowNode(params[i] + "");
+          if (node) {
+            node.data.backcolor = Color;
+            array.push(node)
+          }
         }
       }
-    }
-    ,
-    RefreshRenderedNodes() {
-      const visibleRowNodes = this.agGridApi.getRenderedNodes();
-      let array = []
-      visibleRowNodes.forEach(node => {
-        array.push(node)
-      });
-      this.$nextTick(() => {
-        //this.agGridApi.refreshCells({rowNodes: array, force: true})
+      if (array.length > 0) {
         this.agGridApi.redrawRows({rowNodes: array});
-      })
-    }
-    ,
+      }
+    },
+    onFilterApply(rules) {
+      if (!rules || Object.keys(rules).length === 0) {
+        ListSearch("clear").then((array) => {
+          this.isGoFilter = false;
+          this.agGridApi.onFilterChanged()
+          this.agGridApi.refreshCells({
+            force: true,               // 强制刷新所有字段
+            suppressFlash: true        // 不闪烁高亮（可选）
+          });
+        });
+        return;
+      }
+      this.agGridApi.forEachNode((node, index) => {
+        node.data.rowIndex = index;
+      });
+      this.isGoFilter = true;
+      this.GoFilterList.clear()
+      ListSearch(JSON.stringify(rules)).then((array) => {
+        array.forEach((Theology) => {
+          this.GoFilterList.add(Theology)
+        })
+        this.agGridApi.onFilterChanged()
+      });
+    },
+    HideHook(params) {
+      this.isHideHook = params
+      if (params) {
+        this.AdvancedFilterModel = this.$refs.Filter.agGridApi.getAdvancedFilterModel();
+        this.HideHookList.clear()
+        this.agGridApi.forEachNode((node) => {
+          const theology = parseInt(node.data["Theology"]);
+          this.HideHookList.add(theology)
+        });
+        this.agGridApi.onFilterChanged();
+      } else {
+        this.HideHookList.clear()
+        this.onFilterApply(this.AdvancedFilterModel)
+      }
+    },
+    addFilter(__Theology__, Filter) {
+      if (!this.isGoFilter || Filter == null) return;
+      const theology = parseInt(__Theology__);
+      const exists = this.GoFilterList.has(theology);
+      if (Filter) {
+        if (!exists) {
+          this.GoFilterList.add(theology);
+        }
+      } else {
+        if (exists) {
+          this.GoFilterList.delete(theology);
+        }
+      }
+    },
+    isExternalFilterPresent(params) {
+      return this.isGoFilter || this.isHideHook || this.isSearch;
+    },
+    doesExternalFilterPass(node) {
+      if (this.isHideHook) {
+        if (!this.HideHookList.has(parseInt(node.data['Theology']))) {
+          return false;
+        }
+      }
+      if (this.isSearch) {
+        return this.GoSearchList.has(parseInt(node.data['Theology']));
+      }
+      if (!this.isGoFilter) {
+        return true;
+      }
+      return this.GoFilterList.has(parseInt(node.data['Theology']));
+    },
+    onModelUpdated() {
+      const visibleRowCount = this.agGridApi.getDisplayedRowCount();//可见行
+      if (visibleRowCount === 0) {
+        let totalRowCount = 0;//总行数
+        this.agGridApi.forEachNode(() => {
+          totalRowCount++
+        });
+        let Template = "";
+        if (totalRowCount !== 0) {
+          if (this.isHideHook) {
+            Template = `<span style="padding: 20px;" id="HookMessageText">有数据,但您隐藏了捕获数据</span>`;
+          } else {
+            Template = `<span style="padding: 20px;" id="HookMessageText">根据当前过滤器中条件：没有符合条件的数据</span>`;
+          }
+        } else {
+          this.agGridApi.hideOverlay();
+          Template = `<span style="padding: 20px;" id="HookMessageText">还没有捕获到数据</span>`;
+        }
+        this.overlayNoRowsTemplate = Template;
+        this.agGridApi.showNoRowsOverlay();
+        this.IsShowNoRowsOverlay = true
+      } else {
+        //有行
+        if (this.IsShowNoRowsOverlay) {
+          //当前正在显示没有行的提示信息
+
+          //不显示没有行的提示信息，因为有行
+          this.IsShowNoRowsOverlay = false;
+          //执行API隐藏提示
+          this.agGridApi.hideOverlay();
+        }
+      }
+    },
     onGetRowStyle(params) {
       let res = {
         fontFamily: "微软雅黑"
       }
+      if (this.IsWindows) {
+        res.fontFamily = `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif`;
+      }
+      const id = parseInt(params.data['Theology'])
+      if (this.textMark.has(id)) {
+        const ColorID = this.textMark.get(id)
+        if (Config_HomeTextMark.has(ColorID)) {
+          const value = Config_HomeTextMark.get(ColorID)
+          res.color = Config_IsDark.value ? value["深色主题"] : value["浅色主题"]
+          res.fontWeight = 'bold';
+          return res
+        }
+      }
       if (params.data.color) {
-        if (params.data.color.selected) {
-          if (params.data.color.selected.dark) {
-            //设置选中行的高亮背景色
-            res.backgroundColor = this.darkTheme ? params.data.color.selected.dark : params.data.color.selected.right
-          }
-        }
-        if (!res.backgroundColor) {
-          if (params.data.color.search) {
-            if (params.data.color.search !== '') {
-              //设置搜索的背景颜色
-              res.backgroundColor = params.data.color.search
-            }
-          }
-        }
-        if (!res.backgroundColor) {
-          if (params.data.color.back !== null && params.data.color.back !== void 0) {
-            const mm = this.darkTheme ? params.data.color.back.dark : params.data.color.back.right
-            if (mm) {
-              if (mm !== '') {
-                //设置背景色
-                res.backgroundColor = this.darkTheme ? params.data.color.back.dark : params.data.color.back.right
-              }
-            }
-          }
-        }
-        if (!res.color) {
-          if (params.data.color.TagColor) {
-            //设置标记的文本颜色
-            res.color = params.data.color.TagColor
-            res.fontWeight = 'bold';
-          }
-        }
-        if (!res.color) {
-          SetTextColor(params.data)
-          if (params.data.color.text !== null && params.data.color.text !== void 0) {
-            //设置常规文本颜色
-            res.color = this.darkTheme ? params.data.color.text.dark : params.data.color.text.right
-          }
+        res.color = params.data.color
+      }
+      if (params.data.backcolor) {
+        const ColorID = params.data.backcolor;
+        if (Config_HomeTextMark.has(ColorID)) {
+          const value = Config_HomeTextMark.get(ColorID)
+          res.color = Config_IsDark.value ? value["深色主题"] : value["浅色主题"]
+          res.fontWeight = 'bold';
+          return res
         }
       }
       return res
-    }
-    ,
-    markerColor(Color) {
-      /*
-      *       agGridApi: null,
-            agSelectedArray: [],//选择的行数组
-            agSelectedLine: null,//选中行
-      * */
-      let TagColor = ""
-      if (Color === "红色") {
-        TagColor = "#ff0000"
-      } else if (Color === "蓝色") {
-        TagColor = "#006fff"
-      } else if (Color === "绿色") {
-        TagColor = "#02bd02"
-      } else if (Color === "黄色") {
-        TagColor = "#fab200"
-      } else if (Color === "紫色") {
-        TagColor = "#bc00f6"
-      } else if (Color === "empty") {
-        for (let i = 0; i < this.TagColorMap.length; i++) {
-          const obj = this.RowDataHashMap[this.TagColorMap[i]]
-          if (obj) {
-            obj.data.color.TagColor = null
+    },
+    onGridReady(params) {
+      this.initColumnWidth()
+      //向高级过滤器添加一个按钮
+      {
+        const customButtonContainer = this.$el.getElementsByClassName('ag-advanced-filter ag-advanced-filter-header-cell');
+        let mm = null;
+        // 由于这里是 home 也就是主页面,也会有其他的高级过滤器,但是刚加载的时候肯定只有当前主列表会显示,其他的都是隐藏的,所以获取不到宽度
+        // 并且主窗口的高级过滤器宽度肯定是最长的,所以这里获取宽度最长的一个
+        for (let i = 0; i < customButtonContainer.length; i++) {
+          if (mm == null) {
+            mm = customButtonContainer[i]
+            continue
+          }
+          const width1 = mm.getBoundingClientRect().width;
+          const width2 = customButtonContainer[i].getBoundingClientRect().width;
+          if (width1 < width2) {
+            mm = customButtonContainer[i]
           }
         }
-        CallGoDo("标记颜色", {Data: this.TagColorMap, empty: true})
-        this.TagColorMap = []
-        this.RefreshRenderedNodes()
+        if (mm !== null) {
+          mm.style.display = "none";
+          this.mainFilter = mm.parentElement
+        }
+      }
+    },
+    initColumnWidth() {
+      const ColumnInfo = JSON.parse(JSON.stringify(this.gridOptions.columnDefs))
+      this.initColumnWidthRunTask(ColumnInfo)
+    },
+    initColumnWidthRunTask(ColumnInfo) {
+      requestAnimationFrame(() => {
+        if (!this.agGridApi) return;
+        GetColumnState().then(res => {
+          let colState = [];
+          try {
+            if (res === "") {
+              colState = this.agGridApi.getColumnState();
+            } else {
+              colState = JSON.parse(res)
+              this.agGridApi.applyColumnState({
+                state: colState,
+                applyOrder: true,
+              });
+              return
+            }
+          } catch (e) {
+            colState = this.agGridApi.getColumnState();
+          }
+          const colDefMap = new Map(ColumnInfo.map(col => [col.field, col.width, col.hide]));
+          let hasChanges = false;
+          for (let col of colState) {
+            const newWidth = colDefMap.get(col.colId);
+            const newHide = colDefMap.get(col.hide);
+            if (newWidth !== undefined && col.width !== newWidth) {
+              col.width = newWidth;
+              col.hide = newHide;
+              hasChanges = true;
+            }
+          }
+          if (hasChanges) {
+
+          } else {
+            setTimeout(() => this.initColumnWidthRunTask(ColumnInfo), 100);
+          }
+        })
+
+      });
+    },
+    handleClick(event) {
+      this.agGridApiMain.closeToolPanel()
+      this.$refs.Filter.setFocusElement();
+      if (event.target) {
+        if (event.target.className === "ag-menu-option-part ag-menu-option-text" && event.target.innerText === "选择列") {
+          this.MoveColumnEvent()
+          return;
+        }
+        if ((event.target.className + "").indexOf("ag-viewport") !== -1) {
+          //如果点击没有的行，隐藏面板
+          try {
+            const parentElement = event.target.parentNode.parentNode.parentNode.parentNode.childNodes;
+            const ariaHiddenValue = parentElement[6].getAttribute('aria-hidden');
+            if (ariaHiddenValue === "false") {
+              this.agGridApi.closeToolPanel()
+              this.agSelectedRowNodes.forEach((node) => {
+                node.setSelected(false);
+              });
+              Config_SelectedRow.value = [];
+              this.agSelectedRowNodes = [];
+            }
+          } catch (e) {
+          }
+          return;
+        }
+      }
+    },
+    RefreshVisibleNodes() {
+      const visibleNodes = this.agGridApi.getRenderedNodes();
+      this.agGridApi.redrawRows({rowNodes: visibleNodes});
+    },
+    ColorMarking(ColorID) {
+      if (ColorID === "Clear") {
+        this.textMark.clear()
+        this.RefreshVisibleNodes()
         return
       }
-      let array = []
-      for (let i = 0; i < this.agSelectedArray.length; i++) {
-        array.push({id: this.agSelectedArray[i].data['Theology'], color: TagColor})
-        this.agSelectedArray[i].data.color.TagColor = TagColor
-        this.TagColorMap.push(this.agSelectedArray[i].data.Theology)
+      for (let i = 0; i < this.agSelectedRowNodes.length; i++) {
+        const id = parseInt(this.agSelectedRowNodes[i].data['Theology'])
+        this.textMark.set(id, ColorID)
       }
-      CallGoDo("标记颜色", {Data: array, empty: false})
-      this.RefreshRenderedNodes()
-    }
-    ,
-    delete() {
-      const array = []
-      const array2 = []
-      for (let i = 0; i < this.agSelectedArray.length; i++) {
-        array.push(this.agSelectedArray[i].data['Theology'])
-        array2.push(this.agSelectedArray[i].data)
-      }
-      CallGoDo("删除请求会话", {Data: array}).then(res => {
-        window.vm.List.agGridApi.applyTransaction({remove: array2});
-        this.agSelectedArray = []
-        this.agSelectedLine = null
+      this.RefreshVisibleNodes()
+    },
+    SubResendRequest() {
+      this.ResendRequestCountShow = false
+      this.ResendRequest(parseInt(this.ResendRequestCount), 0)
+    },
+    OpenResendRequest() {
+      this.ResendRequestCountShow = true
+      requestAnimationFrame(() => {
+        this.$refs.ResendRequest.focus()
+        nextTick(() => {
+          const inputEl = this.$refs.ResendRequest.input
+          if (inputEl) {
+            inputEl.select()
+          }
+        })
       })
-    }
-    ,
-    CloseSession() {
-      const array = []
-      for (let i = 0; i < this.agSelectedArray.length; i++) {
-        array.push(this.agSelectedArray[i].data['Theology'])
+    },
+    ResendRequest(n, BreakMode) {
+      if (this.agSelectedRowNodes.length !== 1) {
+        ElNotification({
+          position: 'bottom-right',
+          showClose: true,
+          message: '重发请求失败\n\n没有选择请求',
+          type: 'warning',
+          customClass: 'multiline-message'
+        })
+        return
       }
-      CallGoDo("关闭请求会话", {Data: array}).then(res => {
-        let ay = []
-        for (let i = 0; i < this.agSelectedArray.length; i++) {
-          if (this.agSelectedArray[i].data) {
-            const zt = ("" + this.agSelectedArray[i].data['状态']).toUpperCase()
-            if (zt.indexOf("已连接") !== -1) {
-              this.agSelectedArray[i].data['状态'] = "断开中"
-              ay.push(this.agSelectedArray[i].data)
+      const Method = (this.agSelectedRowNodes[0].data["方式"]).toLowerCase()
+      const isUDP = Method.indexOf("udp") !== -1
+      if (isUDP) {
+        ElNotification({
+          position: 'bottom-right',
+          showClose: true,
+          message: '重发请求失败\n\nUDP请求不支持重发',
+          type: 'warning',
+          customClass: 'multiline-message'
+        })
+        return
+      }
+      if (Config_SunnyNetIsStart.value === false) {
+        ElNotification({
+          position: 'bottom-right',
+          showClose: true,
+          message: '重发请求失败\n\n您当前程序的工作端口未启动成功\n请修改端口后再试!!',
+          type: 'warning',
+          customClass: 'multiline-message'
+        })
+        return
+      }
+      const id = parseInt(this.agSelectedRowNodes[0].data['Theology'])
+      let res = null;
+      if (n === 1) {
+        res = AppResendRequest(id, 1, BreakMode)
+      } else {
+        res = AppResendRequest(id, n, BreakMode)
+      }
+      res.then((ok) => {
+        if (ok === false) {
+          ElNotification({
+            position: 'bottom-right',
+            showClose: true,
+            message: '重发请求失败\n\n未找到此请求',
+            type: 'error',
+            customClass: 'multiline-message'
+          })
+          return
+        }
+        ElNotification({
+          position: 'bottom-right',
+          showClose: true,
+          message: '重发请求\n\n重新发送选中请求已提交',
+          type: 'success',
+          customClass: 'multiline-message'
+        })
+      })
+    },
+    GenerateCode(Language, Type) {
+      if (this.agSelectedRowNodes.length < 1) {
+        ElNotification({
+          position: 'bottom-right',
+          showClose: true,
+          message: '代码生成失败\n\n没有选择请求',
+          type: 'warning',
+          customClass: 'multiline-message'
+        })
+        return
+      }
+      const id = parseInt(this.agSelectedRowNodes[0].data['Theology'])
+      AppGenerateCode(id, Language, Type).then(res => {
+        if (res === "") {
+          ElNotification({
+            position: 'bottom-right',
+            showClose: true,
+            message: '代码生成成功\n\n已复制到剪辑版',
+            type: 'success',
+            customClass: 'multiline-message'
+          })
+        } else {
+          ElNotification({
+            position: 'bottom-right',
+            showClose: true,
+            message: '代码生成失败\n\n' + res,
+            type: 'warning',
+            customClass: 'multiline-message'
+          })
+        }
+      })
+    },
+    HomeListMenu(params) {
+      const defaultMenuItems = params.defaultItems || [];
+      const filteredMenuItems = defaultMenuItems.filter(item => {
+        return item !== 'chartRange' && item !== 'export' && item !== 'paste' && item !== 'copyWithGroupHeaders'; // 禁用功能
+      });
+      if (this.agSelectedRowNodes.length > 0) {
+        filteredMenuItems.push("separator");
+        filteredMenuItems.push({
+          name: "删除选中的请求",
+          action: () => {
+            const array = []
+            const arrayID = []
+            this.agSelectedRowNodes.forEach((node) => {
+              arrayID.push(parseInt(node.data['Theology']))
+              array.push(node.data)
+              node.setSelected(false);
+            });
+            AppDeleteSession(arrayID).then(() => {
+              this.agGridApi.applyTransaction({remove: array});
+              this.agSelectedRowNodes = []
+              Config_SelectedRow.value = [];
+              this.agGridApi.clearCellSelection();
+              this.agGridApi.refreshCells({
+                columns: ['序号'],
+                force: true,
+                suppressFlash: true, // 不需要闪烁动画，可以不加
+              });
+            })
+          },
+        });
+        filteredMenuItems.push({
+          name: "删除非选中的请求",
+          action: () => {
+            const array = []
+            const arrayID = []
+            const arrMap = new Map();
+            this.agSelectedRowNodes.forEach((node) => {
+              arrMap.set(parseInt(node.data['Theology']), true);
+            });
+            this.agGridApi.forEachNode((node) => {
+              const Theology = parseInt(node.data["Theology"]);
+              if (!arrMap.has(Theology)) {
+                array.push(node.data)
+                arrayID.push(Theology)
+              }
+            });
+            arrMap.clear();
+            AppDeleteSession(arrayID).then(() => {
+              this.agGridApi.applyTransaction({remove: array});
+              this.agSelectedRowNodes = []
+              Config_SelectedRow.value = [];
+              this.agGridApi.clearCellSelection();
+              this.agGridApi.refreshCells({
+                columns: ['序号'],
+                force: true,
+                suppressFlash: true, // 不需要闪烁动画，可以不加
+              });
+            })
+          },
+        });
+        filteredMenuItems.push("separator");
+        const arrays = []
+        Config_HomeTextMark.forEach((value) => {
+          arrays.push({
+            name: value["名称"],
+            action: () => this.ColorMarking(value["id"])
+          })
+        })
+        if (this.textMark.size > 0) {
+          arrays.push("separator");
+          arrays.push({name: "清除之前颜色标记", action: () => this.ColorMarking("Clear")})
+        }
+        filteredMenuItems.push({
+          name: "颜色标记",
+          subMenu: arrays,
+        });
+        if (this.agSelectedRowNodes.length === 1) {
+          const Method = (this.agSelectedRowNodes[0].data["方式"]).toLowerCase()
+          const isUDP = Method.indexOf("udp") !== -1
+          if (!isUDP) {
+            const isTCP = Method.indexOf("tcp") !== -1
+            if (isTCP) {
+              filteredMenuItems.push({
+                name: "重发请求",
+                subMenu: [
+                  {
+                    name: "普通重发",
+                    action: () => {
+                      this.ResendRequest(1, 0)
+                    },
+                  },
+                  "separator"
+                  ,
+                  {
+                    name: "批量重发",
+                    action: this.OpenResendRequest,
+                  },
+                ],
+              });
+            } else {
+              filteredMenuItems.push({
+                name: "重发请求",
+                subMenu: [
+                  {
+                    name: "普通重发",
+                    action: () => {
+                      this.ResendRequest(1, 0)
+                    },
+                  },
+                  {
+                    name: "重发 并 拦截上行",
+                    action: () => {
+                      this.ResendRequest(1, 1)
+                    },
+                  },
+                  {
+                    name: "重发 并 拦截下行",
+                    action: () => {
+                      this.ResendRequest(1, 2)
+                    },
+                  },
+                  "separator"
+                  ,
+                  {
+                    name: "批量重发",
+                    action: this.OpenResendRequest,
+                  },
+                ],
+              });
+            }
+            const ares = GetGenerateCodeListMenu(Method, this.GenerateCode, parseInt(this.agSelectedRowNodes[0].data['Theology']))
+            if (ares.length > 0) {
+              filteredMenuItems.push({
+                name: "代码生成",
+                subMenu: ares,
+              });
             }
           }
         }
-        window.vm.List.agGridApi.applyTransaction({update: ay});
-      })
-    }
-    ,
-    resend(mode) {
-      //mode=3 普通重新发送
-      //mode=1 重新发送并且拦截上行
-      //mode=2 重新发送并且拦截下行
-      const array = []
-      for (let i = 0; i < this.agSelectedArray.length; i++) {
-        array.push(this.agSelectedArray[i].data['Theology'])
+        filteredMenuItems.push("separator");
       }
-      CallGoDo("重发请求", {Data: array, Mode: mode})
-    }
-    ,
-  }
-  ,
-  computed: {
-    IsDarkTheme() {
-      const event = new Event('darkThemeChange');
-      window.dispatchEvent(event);
-      {
-        {
-          if (this.darkTheme) {
-            if (this.ListFollowShow) {
-              this.MenuItems[9].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\\n' +
+      let i, t = '';
+      if (Config_AutoRoll.value) {
+        if (Config_IsDark.value) {
+          i = '<div style="display: flex; align-items: center;width: 16px">' +
+              `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\\n' +
               '    <polyline points="20 6 9 17 4 12"/>' +
-              '</svg>`
-            } else {
-              this.MenuItems[9].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18"/>
-    <line x1="6" y1="6" x2="18" y2="18"/>
-</svg>`
-            }
-          } else {
-            if (this.ListFollowShow) {
-              this.MenuItems[9].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\\n' +
+              '</svg>` +
+              '</div>';
+        } else {
+          i = '<div style="display: flex; align-items: center;width: 16px">' +
+              `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\\n' +
               '    <polyline points="20 6 9 17 4 12"/>' +
-              '</svg>`
-            } else {
-              this.MenuItems[9].icon = `<svg xmlns="http://www.w3.org/2000/svg" style="top: 2px;position: relative;" width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18"/>
-    <line x1="6" y1="6" x2="18" y2="18"/>
-</svg>`
-            }
+              '</svg>` +
+              '</div>';
+        }
+
+        t = "关闭自动滚动"
+      } else {
+        t = "开启自动滚动"
+      }
+      if (this.agSelectedRowNodes.length > 0) {
+        let Methods = []
+        for (let i = 0; i < this.agSelectedRowNodes.length; i++) {
+          const _Method = (this.agSelectedRowNodes[i].data["方式"]).toLowerCase()
+          const _State = (this.agSelectedRowNodes[i].data["状态"]).toLowerCase()
+          if (_Method.indexOf("tcp") !== -1 && _State.indexOf("断开") === -1) {
+            const id = parseInt(this.agSelectedRowNodes[i].data['Theology'])
+            Methods.push(id)
           }
         }
+        if (Methods.length > 0) {
+          filteredMenuItems.push({name: "断开所有选中的TCP请求", action: () => AppDisconnectTCPRequest(Methods)})
+          filteredMenuItems.push("separator");
+        }
       }
-      return "example-wrapper " + (this.darkTheme ? "ag-theme-balham-dark" : "ag-theme-balham")
+      filteredMenuItems.push({
+        name: t,
+        action: () => {
+          Config_AutoRoll.value = !Config_AutoRoll.value;
+        },
+        icon: i,
+      });
+      return filteredMenuItems;
+    },
+    openSy4File(selectedFiles) {
+      ElNotification({
+        position: 'bottom-right',
+        showClose: true,
+        message: '正在还原文件...\n这可能需要一定时间...',
+        type: 'success',
+        customClass: 'multiline-message'
+      })
+      Config_IsShowExportProgress.value = "请稍后,正在还原文件"
+      AppImport(selectedFiles).then((obj) => {
+        const err = obj[0]
+        const res = obj[1]
+        this.$refs.listen.insertArray(res, true, (arr) => {
+          Config_IsShowExportProgress.value = ""
+          if (err === "") {
+            ElNotification({
+              position: 'bottom-right',
+              message: '记录文件还原成功！\n\n还原记录：' + arr.length + " 条",
+              type: 'success',
+              customClass: 'multiline-message'
+            })
+            return
+          }
+          ElNotification({
+            position: 'bottom-right',
+            message: '记录文件还原失败！\n\n' + err,
+            type: 'warning',
+            customClass: 'multiline-message'
+          })
+        })
+
+      })
+    },
+    HeaderFileMenu() {
+      const filteredMenuItems = [];
+      filteredMenuItems.push({
+        name: '打开记录文件',
+        action: () => {
+          OpenSunnyFile("").then((selectedFiles, err) => {
+            this.openSy4File(selectedFiles)
+          })
+              .catch((error) => {
+              });
+        },
+        icon: '<div style="display: flex; align-items: center;">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-plus"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' +
+            '</div>',
+      });
+      const saveMenuItems = [{
+        name: '保存全部记录',
+        action: () => {
+          const array = []
+          this.agGridApi.forEachNodeAfterFilterAndSort((node) => {
+            const theology = parseInt(node.data["Theology"]);
+            array.push(theology)
+          });
+          if (array.length < 1) {
+            ElNotification({
+              position: 'bottom-right',
+              showClose: true,
+              message: '保存记录失败\n\n当前没有任何请求',
+              type: 'error',
+              customClass: 'multiline-message'
+            })
+            return
+          }
+          this.ExportMessage(array)
+        }
+      }];
+      if (this.agSelectedRowNodes.length > 0) {
+        saveMenuItems.push({
+          name: '当前选择的所有记录',
+          action: () => {
+            const array = []
+            for (let i = 0; i < this.agSelectedRowNodes.length; i++) {
+              array.push(parseInt(this.agSelectedRowNodes[i].data["Theology"]))
+            }
+            if (array.length < 1) {
+              ElNotification({
+                position: 'bottom-right',
+                showClose: true,
+                message: '保存记录失败\n\n你没有选中任何请求',
+                type: 'error',
+                customClass: 'multiline-message'
+              })
+              return
+            }
+            this.ExportMessage(array)
+          }
+        })
+      }
+      filteredMenuItems.push({
+        name: '保存',
+        subMenu: saveMenuItems,
+        icon: '<div style="display: flex; align-items: center;">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>' +
+            '</div>',
+      });
+      return filteredMenuItems;
+    },
+    MenuEvent(params) {
+      if (Config_Menu_isFileMenu.value) {
+        return this.HeaderFileMenu();
+      }
+      return this.HomeListMenu(params);
+    },
+    onColumnVisible(params) {
+      const array = [];
+      array.push({
+        field: "全部数据",
+        tooltipField: "全部数据",
+        filter: true,
+        headerName: "全部数据",
+        filterParams: {
+          filterOptions: ["contains", "notContains"]
+        },
+      })
+      const allColumns = this.agGridApi.getColumns();
+      allColumns.forEach((col) => {
+        if (col.isVisible() && col.isFilterAllowed()) {
+          array.push({
+            field: col.getId(),
+            tooltipField: col.getId(),
+            headerName: col.getId(),
+            filter: true,
+          })
+        }
+      });
+      this.FilterColumn = array
+      this.saveColumn();
+    },
+    MoveColumnEvent() {
+      if (this.MoveColumn) {
+        return
+      }
+      this.MoveColumn = true
+      this.agGridApi.setGridOption('suppressMovableColumns', false);
+      this.ColumnMoveEventFunc()
+    },
+    ColumnMoveEventFunc() {
+      requestAnimationFrame(() => {
+        if (document.getElementsByClassName("ag-panel ag-default-panel ag-dialog ag-ltr ag-popup-child ag-focus-managed").length < 1) {
+          this.agGridApi.setGridOption('suppressMovableColumns', true);
+          this.MoveColumn = false
+          return
+        }
+        this.ColumnMoveEventFunc()
+      })
     }
-    ,
-    FindWindowShow() {
-      return window.UI.FindWindow
+  },
+  watch: {
+    ResendRequestCount(n) {
+      if (parseInt(n) < 1 || isNaN(parseInt(n))) {
+        this.ResendRequestCount = 1
+        requestAnimationFrame(() => {
+          this.$refs.ResendRequest.focus()
+          nextTick(() => {
+            const inputEl = this.$refs.ResendRequest.input
+            if (inputEl) {
+              inputEl.select()
+            }
+          })
+        })
+      }
+    },
+    IsDark() {
+      requestAnimationFrame(() => {
+        this.RefreshVisibleNodes()
+      })
     },
   }
-  ,
-  mounted() {
-    window.vm.List = this
-    this.agGridApi = this.$refs.agGrid.gridOptions.api
-    //this.HideToolsPanel();
-    window.ToolsMaximize = false
-    this.sideBar = {
-      toolPanels: [
-        {
-          id: 'reqs',
-          labelDefault: '请求数据',
-          labelKey: 'customStats',
-          iconKey: 'columns',
-          toolPanel: 'ToolPanel',
-          width: this.PageWidth.Width,
-        },
-        {
-          id: 'columns',
-          labelDefault: '列选择',
-          labelKey: 'columns',
-          iconKey: 'columns',
-          toolPanel: 'agColumnsToolPanel',
-          width: this.PageWidth.Width,
-          toolPanelParams: {
-            suppressRowGroups: true,
-            suppressValues: true,
-            suppressPivots: true,
-            suppressPivotMode: true,
-            suppressColumnFilter: true,
-            suppressColumnSelectAll: true,
-            suppressColumnExpandAll: true,
-          },
-        },
-      ],
-      defaultToolPanel: 'reqs',
-    }
-    window.addEventListener('resize', this.updateWindowSize);
-    this.updateWindowSize()
-    this.agTools = document.getElementsByClassName("ag-tool-panel-wrapper")
-    document.addEventListener('mousemove', this.handleMouseMove);
-    window.addEventListener('keydown', this.handleKeyDown);
-    //删除 ：root 下的 --el-menu-bg-color 样式
-    document.documentElement.style.setProperty('--el-menu-bg-color', 'unset');
-    this.$nextTick(() => {
-      {
-        const obj1 = this.$refs.agGrid.$el.childNodes
-        if (obj1.length > 0) {
-          obj1.forEach((element) => {
-            if (element && element.classList) {
-              const ClassName = Array.from(element.classList).join(" ")
-              if (ClassName === "ag-root-wrapper ag-layout-normal ag-ltr") {
-                const obj2 = element.childNodes
-                if (obj2) {
-                  obj2.forEach((element2) => {
-                    if (element2 && element2.classList) {
-                      const ClassName2 = Array.from(element2.classList).join(" ")
-                      if (ClassName2 === "ag-root-wrapper-body ag-layout-normal ag-focus-managed") {
-                        const obj3 = element2.childNodes
-                        if (obj3) {
-                          obj3.forEach((element3) => {
-                            if (element3 && element3.classList) {
-                              const ClassName3 = Array.from(element3.classList).join(" ")
-                              if (ClassName3 === 'ag-root ag-unselectable ag-layout-normal') {
-                                this.ListDom = element3
-                              }
-                            }
-                          })
-                        }
-                      }
-                    }
-                  })
-                }
-              }
-            }
-          });
-        }
-      }
-      if (this.ListDom) {
-        // 添加鼠标移入事件监听器
-        this.ListDom.addEventListener('mouseenter', (event) => {
-          this.IsListDomRange = true
-        });
-        // 添加鼠标移出事件监听器
-        this.ListDom.addEventListener('mouseleave', (event) => {
-          this.IsListDomRange = false
-        });
-      }
-    })
-    const columnFilter = this.agGridApi.getFilterInstance('响应长度');
-    columnFilter.setModel({
-      type: 'notContains',
-      filter: '0/0'
-    });
-    const responseTypeFilter = this.agGridApi.getFilterInstance('响应类型');
-    responseTypeFilter.setModel({
-      type: 'notEqual',
-      filter: 'error'
-    });
-    const RequestAddressFilter = this.agGridApi.getFilterInstance('响应类型');
-    RequestAddressFilter.setModel({
-      type: 'Contains',
-      filter: ']:53'
-    });
-
-    window.vm.List.agGridApi.onFilterChanged();
-  }
-  ,
-  beforeUnmount() {
-    window.removeEventListener('resize', this.updateWindowSize); // 移除 resize 事件监听器
-    document.removeEventListener('mousemove', this.handleMouseMove); // 移除 mousemove 事件监听器
-    window.removeEventListener('keydown', this.handleKeyDown); // 移除 keydown 事件监听器
-  }
-  ,
-}
-
-function getMenuItems(Items) {
-  let array = [];
-  for (let i = 0; i < Items.length; i++) {
-    if (Items[i].visible !== false) {
-      let Item = deepCopy(Items[i]);
-      if (Item.subMenu) {
-        let array1 = [];
-        for (let n = 0; n < Item.subMenu.length; n++) {
-          if (Item.subMenu[n].visible !== false) {
-            array1.push(Item.subMenu[n])
-          }
-        }
-        if (array1.length > 0) {
-          if (array1[array1.length - 1] === "separator") {
-            array1.pop()
-          }
-        }
-        Item.subMenu = array1
-      }
-      if (array.length < 1 && Item === "separator") {
-        continue
-      }
-      if (array[array.length - 1] === "separator" && Item === "separator") {
-        continue
-      }
-      array.push(Item)
-    }
-
-  }
-  return array
 }
 </script>
 
 <template>
-  <div class="no-select" STYLE="width: 100%;height: 100%">
-    <div :class="IsDarkTheme">
-      <div class="inner-col">
-        <AgHeaderGroup/>
-        <div class="inner-col2">
-          <ag-grid-vue
-              ref="agGrid"
-              style="height: 100%;"
-              :defaultColDef="defaultColDef"
-              :rowData="RowData"
-              :columnDefs="columns"
-              :enableRangeSelection="true"
-              :enableCharts="true"
-              :modules="leftModules"
-              :sideBar="sideBar"
-              :grid-options="gridOptions"
-              :overlayNoRowsTemplate="overlayNoRowsTemplate"
-              :allowContextMenuWithControlKey="true"
-              :suppressCutToClipboard="true"
-              :sendToClipboard="sendToClipboard"
-          >
-          </ag-grid-vue>
-          <AgFooterGroup/>
-          <FindWindow v-show="FindWindowShow" :show="FindWindowShow"/>
-        </div>
+  <div :style="isNoDisableClick" id="ROOT">
+    <div style="width: 100%;height:calc(100%);position: relative">
+      <div style="width: 100%;height:30px;position: relative"
+           class="home-root ag-theme-params-1 ag-theme-buttonStyle-1 ag-theme-iconSet-4">
+        <Header></Header>
       </div>
-    </div>
-    <div class="ag-resizer-wrapper">
-      <div ref="eTopLeftResizer" class="ag-resizer ag-resizer-topLeft" style="pointer-events: all;z-index: 1000"></div>
-      <div ref="eTopResizer" class="ag-resizer ag-resizer-top" style="pointer-events: all;z-index: 1000"></div>
-      <div ref="eTopRightResizer" class="ag-resizer ag-resizer-topRight"
-           style="pointer-events: all;z-index: 1000"></div>
-      <div ref="eRightResizer" class="ag-resizer ag-resizer-right" style="pointer-events: all;z-index: 1000"></div>
-      <div ref="eBottomRightResizer" class="ag-resizer ag-resizer-bottomRight"
-           style="pointer-events: all;z-index: 1000"></div>
-      <div ref="eBottomResizer" class="ag-resizer ag-resizer-bottom" style="pointer-events: all;z-index: 1000"></div>
-      <div ref="eBottomLeftResizer" class="ag-resizer ag-resizer-bottomLeft"
-           style="pointer-events: all;z-index: 1000"></div>
-      <div ref="eLeftResizer" class="ag-resizer ag-resizer-left" style="pointer-events: all;z-index: 1000"></div>
+
+      <div style="width: 100%;height: calc(100% - 60px)" id="rootList">
+        <ag-grid-vue ref="agGridSide"
+                     :theme="agTheme"
+                     :sideBar="gridSideBar"
+                     style="margin-left: -1px;height: 100% ;width: calc(100% + 2px);margin-top: -2px"
+        />
+        <ag-grid-vue @click="handleClick"
+                     ref="agGrid"
+                     :theme="agTheme"
+                     :rowData="rowData"
+                     :sideBar="sideBar"
+                     :onGridReady="onGridReady"
+                     style="margin-left: -1px;margin-top: -1px;margin-bottom: -1px;height: calc(100% + 3px) !important;width: calc(100% + 3px);"
+                     :defaultColDef="defaultColDef"
+                     :cellSelection="cellSelection"
+                     :rowSelection="rowSelection"
+                     :enableCharts="true"
+                     :grid-options="gridOptions"
+                     :loading="false"
+                     :allowContextMenuWithControlKey="true"
+                     :overlayNoRowsTemplate="overlayNoRowsTemplate"
+                     :suppressCutToClipboard="true"
+        />
+      </div>
+      <div style="width: 100%;height:32px;font-size: 18px" class="home-root ag-theme-params-1">
+        <HomeFooter style="width: 100%;top: 0" :isHideHook="HideHook"></HomeFooter>
+        <el-dialog
+            v-model="ResendRequestCountShow"
+            title="批量重放请求"
+            width="360"
+            align-center
+        >
+          <el-form label-position="top">
+            <el-form-item label="您想要重发多少次？">
+              <el-input-number
+                  ref="ResendRequest"
+                  v-model="ResendRequestCount"
+                  :min="1"
+                  :max="100000"
+                  controls-position="right"
+                  style="width: 100%;"
+                  @keydown.enter="SubResendRequest"
+              />
+            </el-form-item>
+          </el-form>
+
+          <template #footer>
+            <div class="dialog-footer">
+              <el-button @click="SubResendRequest">确定重发</el-button>
+            </div>
+          </template>
+        </el-dialog>
+
+      </div>
+      <ListenOn ref="listen" style="display: none" :addFilter="addFilter" :setSelectedRow="setSelectedRow"/>
+      <FindWindow style="display: none"/>
+      <Filter ref="Filter" Name="主列表" :Parent="mainFilter" :column="FilterColumn" :apply="onFilterApply"
+              :SearchDone="SearchDone" :CancelSearch="CancelSearch"/>
+
+
     </div>
   </div>
 </template>
-
-<style scoped>
-
-.ag-cell-focus, .ag-cell-no-focus {
-  border: none !important;
-}
-
-/* This CSS is to not apply the border for the column having 'no-border' class */
-.no-border.ag-cell:focus {
-  border: none !important;
-  outline: none;
-}
-
-.example-wrapper {
-  display: flex;
-  height: 100%;
-  width: 100%;
-  flex: 1 1;
-  gap: 50px;
-}
-
-.inner-col {
-  width: 100%;
-  height: 100%;
-}
-
-.inner-col2 {
-  width: 100%;
-  height: calc(100% - 60px);
-}
-
-
-</style>
-
-<style>
-/* 设置悬停背景色为黄色，并提高优先级 */
-:root {
-
-}
-
-.ag-theme-balham {
-  --ag-row-hover-color: #024d6c;
-}
-
-.ag-theme-balham-dark {
-  --ag-row-hover-color: rgb(139, 207, 238);
-}
-</style>

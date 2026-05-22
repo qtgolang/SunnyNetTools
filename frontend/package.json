@@ -5,33 +5,35 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build:dev": "vite build --minify false --mode development",
+    "build": "vite build --mode production",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ag-grid-community/client-side-row-model": "~30.2.0",
-    "@ag-grid-community/core": "^30.2.0",
-    "@ag-grid-community/csv-export": "~30.2.0",
-    "@ag-grid-community/react": "^30.2.0",
-    "@ag-grid-community/styles": "^30.2.0",
-    "@ag-grid-community/vue3": "~30.2.0",
-    "@ag-grid-enterprise/charts": "^30.2.0",
-    "@ag-grid-enterprise/clipboard": "^30.2.0",
-    "@ag-grid-enterprise/column-tool-panel": "^30.2.0",
-    "@ag-grid-enterprise/excel-export": "~30.2.0",
-    "@ag-grid-enterprise/master-detail": "~30.2.0",
-    "@ag-grid-enterprise/menu": "^30.2.0",
-    "@ag-grid-enterprise/set-filter": "^30.2.0",
-    "@ag-grid-enterprise/side-bar": "^30.2.0",
-    "@element-plus/icons-vue": "^2.1.0",
-    "@vueuse/core": "^10.5.0",
-    "element-plus": "^2.4.1",
-    "js-base64": "^3.7.5",
+    "@ag-grid-community/vue3": "^32.3.3",
+    "@ag-grid-enterprise/clipboard": "^32.3.3",
+    "@ag-grid-enterprise/excel-export": "^32.3.3",
+    "@ag-grid-enterprise/set-filter": "^32.3.3",
+    "@element-plus/icons-vue": "^2.3.1",
+    "@imengyu/vue3-context-menu": "^1.4.8",
+    "@wailsio/runtime": "latest",
+    "ag-charts-enterprise": "^11.1.1",
+    "ag-grid-community": "^33.1.1",
+    "ag-grid-enterprise": "^33.1.1",
+    "ag-grid-react": "^33.1.1",
+    "ag-grid-vue3": "^33.1.1",
+    "element-plus": "^2.9.5",
     "monaco-editor": "^0.45.0",
-    "vue": "^3.2.37"
+    "monaco-editor-nls": "^3.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vue": "^3.2.45"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^3.0.3",
-    "vite": "^3.0.7"
+    "@vitejs/plugin-vue": "^4.0.0",
+    "sass-embedded": "^1.87.0",
+    "terser": "^5.46.0",
+    "vite": "^5.0.0",
+    "vite-plugin-compression": "^0.5.1"
   }
 }

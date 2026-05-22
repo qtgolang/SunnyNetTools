@@ -1,15 +1,15 @@
 {
 	"fixed": {
-		"file_version": "{{.Info.ProductVersion}}"
+		"file_version": "v4.1.0"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "{{.Info.ProductVersion}}",
-			"CompanyName": "{{.Info.CompanyName}}",
-			"FileDescription": "{{.Info.ProductName}}",
-			"LegalCopyright": "{{.Info.Copyright}}",
-			"ProductName": "{{.Info.ProductName}}",
-			"Comments": "{{.Info.Comments}}"
+			"ProductVersion": "v4.1.0",
+			"CompanyName": "© 2026,秦天",
+			"FileDescription": "SunnyNetTools",
+			"LegalCopyright": "© 2026,秦天",
+			"ProductName": "SunnyNet",
+			"Comments": "SunnyNet"
 		}
 	}
 }

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=My Product
+Comment=A SunnyNetV4Pro application
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/sunnynetv4pro.exe %u
+Terminal=false
+Type=Application
+Icon=sunnynetv4pro.exe
+Categories=Utility;
+StartupWMClass=sunnynetv4pro.exe
+
+ 

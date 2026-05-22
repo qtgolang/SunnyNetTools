@@ -1,0 +1,1 @@
+import{u as a}from"./index.D5D8HuSX.js";import{r as t}from"./index.DHWipiO2.js";let e=!1;const S=()=>{const[s,r]=t.useState(!e);return t.useEffect(()=>{e=!0,r(!1)},[]),s},f=(s,r)=>{const o=S(),u=a(s);return o?r:u};export{f as u};

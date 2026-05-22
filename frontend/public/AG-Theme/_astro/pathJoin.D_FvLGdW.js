@@ -1,0 +1,1 @@
+function a(...i){if(!i||!i.length)return"";if(i[0]==="/"&&i.length===1)return"/";const l=i.filter(Boolean).map(r=>r.toString()).map(r=>r!=="/"&&r[0]==="/"?r.slice(1):r).map(r=>r!=="/"&&r[r.length-1]==="/"?r.slice(0,r.length-1):r).filter(r=>r!=="/"),[t]=i;return t?.[0]==="/"?`/${l.join("/")}`:l.join("/")}export{a as p};

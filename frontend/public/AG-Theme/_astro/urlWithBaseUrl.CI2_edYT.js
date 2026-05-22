@@ -1,0 +1,1 @@
+import{S as o}from"./constants.ByWzZ7-G.js";import{p as h}from"./pathJoin.D_FvLGdW.js";const n=(t="",i=o)=>{const a=t.endsWith("/");let s=t;return t.startsWith("./")?s=h("/",i,t.slice(2)):t.startsWith("/")?s=h("/",i,t):t.startsWith("http")||(s=h("/",i,t)),a&&!t.startsWith("http")&&(s=s+"/"),s};export{n as u};

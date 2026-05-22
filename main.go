@@ -1,38 +1,56 @@
 package main
 
 import (
+	"changeme/Service"
 	"embed"
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	_ "embed"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"runtime"
+	"strings"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
-var app = NewApp()
 
+func init() {
+	if runtime.GOOS == "darwin" {
+		if os.Geteuid() != 0 {
+			if strings.Contains(os.Args[0], "/Contents/MacOS/") {
+				cmd := exec.Command("osascript", "-e", `
+						tell application "Terminal"
+    						activate
+    						do script "echo -e '\\033]0; SunnyNet Pro \\007' && \
+        						clear && \
+        						echo '' && \
+        						echo '------------------------------------' && \
+        						echo -e '\\033[31m        需要超级用户权限以继续\\033[0m' && \
+        						echo '------------------------------------' && \
+        						echo '' && \
+        						echo '由于系统代理配置或 utun 驱动加载，需要授权才能继续操作。' && \
+        						echo '' && \
+        						echo '请输入您的超级用户密码以授予权限...' && \
+        						echo '' && \
+        						sudo `+os.Args[0]+` && \
+        						exit"
+						end tell
+						`)
+				_ = cmd.Start()
+				os.Exit(0)
+			} else {
+				//终端程序
+				fmt.Println("请使用 sudo 启动程序")
+				_, _ = fmt.Scanln()
+				os.Exit(0)
+			}
+		}
+	}
+}
 func main() {
-	// Create an instance of the app structure
-	Size := GlobalConfig.Size
-	// Create application with options
-	err := wails.Run(&options.App{
-		Frameless: true,
-		Title:     "SunnyNet",
-		Width:     Size.Width,
-		Height:    Size.Height,
-		MinWidth:  823,
-		MinHeight: 388,
-		AssetServer: &assetserver.Options{
-			Assets: assets,
-		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.startup,
-		Bind: []interface{}{
-			app,
-		},
-	})
-
+	err := Service.CreateMainWindow(assets).Run()
 	if err != nil {
-		println("Error:", err.Error())
+		log.Fatal(err)
 	}
 }

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html data-dark-mode="true" data-ag-theme-mode="dark-blue">
+<head>
+    <meta charset="UTF-8">
+    <title>Theme</title>
+    <div id="app" style="height: 32px;width: 100%;position:absolute" ></div>
+    <script defer>
+        localStorage.setItem("theme-builder.atom.config.expandedEditors", ["General", "All Parameters", "所有参数"]);
+
+        function setReadOnly() {
+            localStorage.setItem("theme-builder.atom.config.expandedEditors", ["General", "All Parameters", "所有参数"]);
+            const inputElement = document.querySelector('input[placeholder="选择参数…"]');
+            inputElement.readOnly = true;
+            try {
+                document.getElementsByClassName("css-kp3f3v")[0].style = "height: calc(100% - 60px);width: calc(100% - 40px);position: absolute;left: 15px;top:30px"
+            } catch (e) {
+            }
+
+        };
+
+        function encodeToBase64(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+
+        function decodeFromBase64(str) {
+            return decodeURIComponent(escape(atob(str)));
+        }
+
+        function AddCopy(test) {
+            requestAnimationFrame(() => {
+                const dropdownWrapperArray = document.getElementsByClassName("dropdownWrapper")
+                if (dropdownWrapperArray.length < 1) {
+                    AddCopy(test)
+                    return
+                }
+                const cButton = document.createElement("button");
+                cButton.innerHTML = `复制`;
+                cButton.style.width = "calc(100%)";
+                cButton.style.marginBottom = "20px";
+                cButton.addEventListener("click", () => {
+                    navigator.clipboard.writeText(test)
+                    cButton.innerHTML = `已复制到剪辑版`;
+                    setTimeout(() => {
+                        cButton.innerHTML = `复制`;
+                    }, 1000)
+                });
+                dropdownWrapperArray[0].parentElement.insertBefore(cButton, dropdownWrapperArray[0])
+            });
+        }
+
+        function RC4(key, text) {
+            // 初始化 S 盒
+            const S = [];
+            for (let i = 0; i < 256; i++) {
+                S[i] = i;
+            }
+
+            // 密钥调度算法 (KSA)
+            let j = 0;
+            for (let i = 0; i < 256; i++) {
+                j = (j + S[i] + key.charCodeAt(i % key.length)) % 256;
+                [S[i], S[j]] = [S[j], S[i]]; // 交换
+            }
+
+            // 伪随机生成算法 (PRGA)
+            let i = 0;
+            j = 0;
+            const output = [];
+            for (let k = 0; k < text.length; k++) {
+                i = (i + 1) % 256;
+                j = (j + S[i]) % 256;
+                [S[i], S[j]] = [S[j], S[i]]; // 交换
+
+                const keystream = S[(S[i] + S[j]) % 256];
+                output.push(String.fromCharCode(text.charCodeAt(k) ^ keystream)); // XOR 操作
+            }
+
+            return output.join('');
+        }
+
+        window.Fomrt = function (test) {
+            const obj = test
+            const obj2 = JSON.parse("{}")
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i); // 获取键
+                const value = localStorage.getItem(key); // 获取键对应的值
+                obj2[key.replaceAll("theme-builder.", "")] = value
+            }
+            const cc = encodeToBase64(RC4("12312312", JSON.stringify(obj2)));
+            test = obj.slice(0, -8) + ",\r\n        Dev: \"" + cc + "\"\r\n    }\r\n";
+            AddCopy(test)
+            return test
+        };
+        window.SetLocalStorage = function (Dev) {
+            const jsonObj = JSON.parse(RC4("12312312", decodeFromBase64(Dev)))
+            localStorage.clear();
+            for (const key in jsonObj) {
+                if (jsonObj.hasOwnProperty(key)) {
+                    localStorage.setItem("theme-builder." + key, jsonObj[key]);
+                }
+            }
+        };
+
+        function initSetReadOnly() {
+            try {
+                setReadOnly();
+            } catch (e) {
+                try {
+                    document.querySelector('button[aria-controls="radix-:rb:"]').click()
+                } catch (e) {
+                }
+                setTimeout(() => {
+                    initSetReadOnly()
+                }, 500)
+            }
+        };
+        initSetReadOnly();
+    </script>
+
+    <link rel="stylesheet" href="/AG-Theme/_astro/example-finance.DQZXqfST.css">
+
+    <link rel="stylesheet" href="/AG-Theme/_astro/_pageName_.BTiaybtX.css">
+    <style>
+        ._container_1d2i5_1 {
+            --icon-color: var(--color-enterprise-icon);
+            --icon-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        ._container_1d2i5_1 .icon {
+            position: relative;
+            top: -2px
+        }
+
+        ._link_1d2i5_13 {
+            opacity: .5;
+            transition: opacity .33s ease-in-out
+        }
+
+        .ag-row:hover ._link_1d2i5_13 {
+            opacity: 1
+        }
+
+        ._newTabIcon_1d2i5_21 {
+            --icon-size: 14px;
+            margin: 2px 2px 0 6px
+        }
+
+        ._configuration_10dtg_1 {
+            display: flex;
+            flex-direction: column;
+            gap: 16px
+        }
+
+        ._rowModel_10dtg_7,
+        ._bundles_10dtg_8,
+        ._charts_10dtg_9 {
+            display: flex;
+            align-items: center
+        }
+
+        ._rowModel_10dtg_7 ._label_10dtg_13,
+        ._bundles_10dtg_8 ._label_10dtg_13,
+        ._charts_10dtg_9 ._label_10dtg_13 {
+            width: 100px;
+            font-weight: var(--text-semibold)
+        }
+
+        ._rowModel_10dtg_7 > div,
+        ._bundles_10dtg_8 > div,
+        ._charts_10dtg_9 > div {
+            display: flex;
+            gap: 32px;
+            margin-left: 12px
+        }
+
+        ._rowModel_10dtg_7 label,
+        ._bundles_10dtg_8 label,
+        ._charts_10dtg_9 label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        ._enterpriseIcon_10dtg_35 {
+            --icon-size: var(--text-fs-lg);
+            --icon-color: var(--color-enterprise-icon)
+        }
+
+        ._moduleName_zn8z5_1 {
+            font-size: 13px
+        }
+
+        ._searchBox_83fei_1 {
+            position: relative;
+            display: flex;
+            margin-top: 16px;
+            border-radius: var(--radius-md);
+            cursor: text
+        }
+
+        [data-dark-mode=true] ._searchBox_83fei_1 input {
+            background: color-mix(in srgb, var(--color-bg-primary), var(--color-fg-primary) 6%)
+        }
+
+        [data-dark-mode=true] ._searchBox_83fei_1 input::placeholder {
+            color: #fff9
+        }
+
+        ._searchIcon_83fei_15 {
+            --icon-size: 20px;
+            --icon-color: var(--color-fg-secondary);
+            position: absolute;
+            top: 10px;
+            left: 16px
+        }
+
+        input[type=search]._searchInput_83fei_23 {
+            width: 100%;
+            padding: 8px 8px 8px 40px
+        }
+
+        input[type=search]._searchInput_83fei_23::placeholder {
+            color: var(--color-fg-quinary)
+        }
+
+        input[type=search]._searchInput_83fei_23::-webkit-search-decoration,
+        input[type=search]._searchInput_83fei_23::-webkit-search-cancel-button {
+            display: none
+        }
+
+        ._form_3saq1_1 .alert {
+            margin: 0 0 6px
+        }
+
+        ._licenceWrapper_3saq1_5 {
+            margin-top: 8px;
+            position: relative
+        }
+
+        ._license_3saq1_10,
+        ._licencePlaceholder_3saq1_11 {
+            width: 100%;
+            height: 14.2em;
+            padding: 16px;
+            word-break: break-all;
+            font-family: var(--text-monospace-font-family);
+            font-size: 15px;
+            line-height: var(--text-lh-base)
+        }
+
+        ._license_3saq1_10 {
+            resize: none;
+            border-radius: var(--radius-md);
+            border: 1px solid color-mix(in srgb, var(--color-border-secondary), var(--color-border-primary));
+            background-color: var(--color-bg-secondary);
+            color: var(--color-fg-secondary)
+        }
+
+        ._license_3saq1_10::placeholder {
+            opacity: 0
+        }
+
+        [data-dark-mode=true] ._license_3saq1_10 {
+            background-color: var(--color-bg-tertiary)
+        }
+
+        ._licencePlaceholder_3saq1_11 {
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            pointer-events: none
+        }
+
+        ._licencePlaceholder_3saq1_11 span {
+            opacity: .5
+        }
+
+        ._licenseData_3saq1_46 {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 16px
+        }
+
+        ._expired_3saq1_53 {
+            color: var(--color-negative)
+        }
+
+        ._frameworkLogo_3saq1_57 {
+            width: 24px;
+            height: 24px;
+            border-radius: var(--radius-xs)
+        }
+
+        ._configureItems_3saq1_63 {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px 32px;
+            margin-top: 8px
+        }
+
+        ._configureItems_3saq1_63 label {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        ._error_3saq1_76 {
+            border: 1px solid var(--color-input-error);
+            background-color: var(--color-util-warning-100)
+        }
+
+        ._results_3saq1_81 {
+            margin-top: 32px
+        }
+
+        ._results_3saq1_81 h2 {
+            margin-top: 48px
+        }
+
+        ._reposTable_3saq1_88 thead {
+            line-height: 1.2;
+            vertical-align: bottom
+        }
+
+        ._reposTable_3saq1_88 th:first-child,
+        ._reposTable_3saq1_88 td:first-child {
+            padding-left: 0
+        }
+
+        ._reposTable_3saq1_88 td {
+            vertical-align: middle;
+            text-transform: capitalize
+        }
+
+        ._reposTable_3saq1_88 ._frameworkLogo_3saq1_57 {
+            margin-right: 4px
+        }
+
+        @media screen and (max-width: 900px) {
+            ._reposTable_3saq1_88 thead {
+                display: none
+            }
+
+            ._reposTable_3saq1_88 tr,
+            ._reposTable_3saq1_88 td {
+                display: block;
+                text-align: left
+            }
+
+            ._reposTable_3saq1_88 tr {
+                padding: 16px 0
+            }
+
+            ._reposTable_3saq1_88 tr:nth-child(2n) {
+                background-color: unset
+            }
+
+            ._reposTable_3saq1_88 td {
+                padding: 0;
+                line-height: var(--text-lh-tight);
+                font-weight: var(--text-bold)
+            }
+
+            ._reposTable_3saq1_88 td:not(:last-child) {
+                margin-bottom: 8px
+            }
+
+            ._reposTable_3saq1_88 td[data-column]:before {
+                content: attr(data-column) ": ";
+                font-weight: var(--text-regular);
+                color: var(--color-fg-secondary)
+            }
+        }
+
+        @media screen and (min-width: 900px) {
+
+            ._reposTable_3saq1_88 th:last-child,
+            ._reposTable_3saq1_88 td:last-child {
+                padding-right: 0;
+                text-align: right
+            }
+
+            ._reposTable_3saq1_88 [data-column="GitHub Repo"] {
+                width: 280px
+            }
+
+            ._reposTable_3saq1_88 [data-column=Framework] {
+                width: 140px
+            }
+        }
+
+        @media screen and (min-width: 1600px) {
+            ._reposTable_3saq1_88 [data-column="License Type"] {
+                width: 160px
+            }
+        }
+
+        ._repoButton_3saq1_151 > svg.icon {
+            --icon-size: 1.5em;
+            position: relative;
+            right: 4px
+        }
+    </style>
+    <link rel="stylesheet" href="/AG-Theme/_astro/DocsExampleRunner.b6J30Pzg.css">
+    <style>
+        .force-resize-cursor * {
+            cursor: ew-resize !important
+        }
+
+        @keyframes _fadeIn_1g5nw_1 {
+            0% {
+                opacity: 0
+            }
+
+            to {
+                opacity: .8
+            }
+        }
+
+        @keyframes _fadeOut_1g5nw_1 {
+            0% {
+                opacity: .8
+            }
+
+            to {
+                opacity: 0
+            }
+        }
+
+        @keyframes _scaleFadeInUp_1g5nw_1 {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(.95)
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1)
+            }
+        }
+
+        @keyframes _scaleFadeOutDown_1g5nw_1 {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1)
+            }
+
+            to {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(.95)
+            }
+        }
+
+        ._overlay_1g5nw_37 {
+            background-color: color-mix(in srgb, var(--color-black), var(--color-black) 45%);
+            z-index: 1000;
+            position: fixed;
+            inset: 0;
+            opacity: .8
+        }
+
+        [data-dark-mode=true] ._overlay_1g5nw_37 {
+            background-color: color-mix(in srgb, var(--color-black), var(--color-bg-primary) 35%);
+            opacity: .8
+        }
+
+        ._overlay_1g5nw_37[data-state=open] {
+            animation: _fadeIn_1g5nw_1 .25s ease-in
+        }
+
+        ._overlay_1g5nw_37[data-state=closed] {
+            animation: _fadeOut_1g5nw_1 .25s ease-in
+        }
+
+        ._content_1g5nw_55 {
+            background-color: var(--color-bg-primary);
+            border-radius: 8px;
+            box-shadow: #0e121659 0 10px 38px -10px, #0e121633 0 10px 20px -15px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            max-width: 464px;
+            max-height: 85vh;
+            z-index: 1000;
+            overflow: hidden
+        }
+
+        ._content_1g5nw_55:focus {
+            outline: none
+        }
+
+        ._content_1g5nw_55[data-state=open] {
+            animation: _scaleFadeInUp_1g5nw_1 .2s cubic-bezier(.4, 0, 1, 1)
+        }
+
+        ._content_1g5nw_55[data-state=closed] {
+            animation: _scaleFadeOutDown_1g5nw_1 .2s cubic-bezier(1, 1, 0, .4)
+        }
+
+        ._title_1g5nw_79 {
+            margin: 0 0 8px;
+            font-size: var(--text-fs-lg);
+            color: var(--color-text-secondary)
+        }
+
+        ._description_1g5nw_86 {
+            margin: 10px 0 0;
+            color: var(--mauve-11);
+            font-size: 15px;
+            line-height: 1.5
+        }
+
+        ._contentModal_1g5nw_93 {
+            padding: 24px
+        }
+
+        ._actions_1g5nw_97 {
+            padding: 16px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            border-top: 1px solid var(--color-border-secondary);
+            font-size: 14px
+        }
+
+        ._actions_1g5nw_97._noSeparator_1g5nw_105 {
+            padding: 0 24px 24px;
+            border-top: none
+        }
+
+        ._fullWidth_1g5nw_110 {
+            width: 100%
+        }
+    </style>
+</head>
+
+
+<div class="_mainContainer_b2g1f_5">
+    <header class="_header_1agp5_1 site-header">
+        <div class="_headerInner_1agp5_20 layout-page-max-width">
+            <style>
+                astro-island,
+                astro-slot,
+                astro-static-slot {
+                    display: contents
+                }
+            </style>
+            <script>(() => {
+                var e = async t => {
+                    await (await t())()
+                };
+                (self.Astro || (self.Astro = {})).load = e;
+                window.dispatchEvent(new Event("astro:load"));
+            })();
+            ;(() => {
+                var A = Object.defineProperty;
+                var g = (i, o, a) => o in i ? A(i, o, {
+                    enumerable: !0,
+                    configurable: !0,
+                    writable: !0,
+                    value: a
+                }) : i[o] = a;
+                var d = (i, o, a) => g(i, typeof o != "symbol" ? o + "" : o, a);
+                {
+                    let i = {
+                            0: t => m(t),
+                            1: t => a(t),
+                            2: t => new RegExp(t),
+                            3: t => new Date(t),
+                            4: t => new Map(a(t)),
+                            5: t => new Set(a(t)),
+                            6: t => BigInt(t),
+                            7: t => new URL(t),
+                            8: t => new Uint8Array(t),
+                            9: t => new Uint16Array(t),
+                            10: t => new Uint32Array(t),
+                            11: t => 1 / 0 * t
+                        }, o = t => {
+                            let [l, e] = t;
+                            return l in i ? i[l](e) : void 0
+                        }, a = t => t.map(o),
+                        m = t => typeof t != "object" || t === null ? t : Object.fromEntries(Object.entries(t).map(([l, e]) => [l, o(e)]));
+
+                    class y extends HTMLElement {
+                        constructor() {
+                            super(...arguments);
+                            d(this, "Component");
+                            d(this, "hydrator");
+                            d(this, "hydrate", async () => {
+                                var b;
+                                if (!this.hydrator || !this.isConnected) return;
+                                let e = (b = this.parentElement) == null ? void 0 : b.closest("astro-island[ssr]");
+                                if (e) {
+                                    e.addEventListener("astro:hydrate", this.hydrate, {once: !0});
+                                    return
+                                }
+                                let c = this.querySelectorAll("astro-slot"), n = {},
+                                    h = this.querySelectorAll("template[data-astro-template]");
+                                for (let r of h) {
+                                    let s = r.closest(this.tagName);
+                                    s != null && s.isSameNode(this) && (n[r.getAttribute("data-astro-template") || "default"] = r.innerHTML, r.remove())
+                                }
+                                for (let r of c) {
+                                    let s = r.closest(this.tagName);
+                                    s != null && s.isSameNode(this) && (n[r.getAttribute("name") || "default"] = r.innerHTML)
+                                }
+                                let p;
+                                try {
+                                    p = this.hasAttribute("props") ? m(JSON.parse(this.getAttribute("props"))) : {}
+                                } catch (r) {
+                                    let s = this.getAttribute("component-url") || "<unknown>",
+                                        v = this.getAttribute("component-export");
+                                    throw v && (s += ` (export ${v})`), console.error(`[hydrate] Error parsing props for component ${s}`, this.getAttribute("props"), r), r
+                                }
+                                let u;
+                                await this.hydrator(this)(this.Component, p, n, {client: this.getAttribute("client")}), this.removeAttribute("ssr"), this.dispatchEvent(new CustomEvent("astro:hydrate"))
+                            });
+                            d(this, "unmount", () => {
+                                this.isConnected || this.dispatchEvent(new CustomEvent("astro:unmount"))
+                            })
+                        }
+
+                        disconnectedCallback() {
+                            document.removeEventListener("astro:after-swap", this.unmount), document.addEventListener("astro:after-swap", this.unmount, {once: !0})
+                        }
+
+                        connectedCallback() {
+                            if (!this.hasAttribute("await-children") || document.readyState === "interactive" || document.readyState === "complete") this.childrenConnectedCallback(); else {
+                                let e = () => {
+                                    document.removeEventListener("DOMContentLoaded", e), c.disconnect(), this.childrenConnectedCallback()
+                                }, c = new MutationObserver(() => {
+                                    var n;
+                                    ((n = this.lastChild) == null ? void 0 : n.nodeType) === Node.COMMENT_NODE && this.lastChild.nodeValue === "astro:end" && (this.lastChild.remove(), e())
+                                });
+                                c.observe(this, {childList: !0}), document.addEventListener("DOMContentLoaded", e)
+                            }
+                        }
+
+                        async childrenConnectedCallback() {
+                            let e = this.getAttribute("before-hydration-url");
+                            e && await import(e), this.start()
+                        }
+
+                        async start() {
+                            let e = JSON.parse(this.getAttribute("opts")), c = this.getAttribute("client");
+                            if (Astro[c] === void 0) {
+                                window.addEventListener(`astro:${c}`, () => this.start(), {once: !0});
+                                return
+                            }
+                            try {
+                                await Astro[c](async () => {
+                                    let n = this.getAttribute("renderer-url"), [h, {default: p}] = await Promise.all([import(this.getAttribute("component-url")), n ? import(n) : () => () => {
+                                    }]), u = this.getAttribute("component-export") || "default";
+                                    if (!u.includes(".")) this.Component = h[u]; else {
+                                        this.Component = h;
+                                        for (let f of u.split(".")) this.Component = this.Component[f]
+                                    }
+                                    return this.hydrator = p, this.hydrate
+                                }, e, this)
+                            } catch (n) {
+                                console.error(`[astro-island] Error hydrating ${this.getAttribute("component-url")}`, n)
+                            }
+                        }
+
+                        attributeChangedCallback() {
+                            this.hydrate()
+                        }
+                    }
+
+                    d(y, "observedAttributes", ["props"]), customElements.get("astro-island") || customElements.define("astro-island", y)
+                }
+            })();</script>
+
+
+        </div>
+    </header>
+    <div class="contentViewport layout-grid">
+        <script>(() => {
+            var e = async t => {
+                await (await t())()
+            };
+            (self.Astro || (self.Astro = {})).only = e;
+            window.dispatchEvent(new Event("astro:only"));
+        })();</script>
+        <astro-island uid="Z2t8OXC" component-url="/AG-Theme/_astro/ThemeBuilder.MxrB9r4V.js"
+                      component-export="ThemeBuilder"
+                      renderer-url="/AG-Theme/_astro/client.5kNSwotS.js" props="{}" ssr="" client="only"></astro-island>
+
+    </div>
+</div>
+<body oncontextmenu="return false" style="user-select: none">
+<script type="module" src="/src/themeDesign.js"></script>
+</body>
+</html>

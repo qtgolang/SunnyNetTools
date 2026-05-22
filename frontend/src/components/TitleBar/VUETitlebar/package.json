@@ -1,0 +1,27 @@
+{
+  "name": "@wuild/vue-titlebar",
+  "version": "1.0.1",
+  "description": "Simple and easy to use title bar for electron  \r stylesheets are written in scss and require a loader for it.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Wuild",
+  "license": "MIT",
+  "directories": {
+    "example": "examples"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Wuild/vue-titlebar.git"
+  },
+  "keywords": [
+    "titlebar",
+    "vue",
+    "electron"
+  ],
+  "bugs": {
+    "url": "https://github.com/Wuild/vue-titlebar/issues"
+  },
+  "homepage": "https://github.com/Wuild/vue-titlebar#readme"
+}

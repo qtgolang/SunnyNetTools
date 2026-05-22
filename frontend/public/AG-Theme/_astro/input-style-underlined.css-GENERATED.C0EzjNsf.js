@@ -1,0 +1,1 @@
+const t=":where(input.ag-input-field-input:not([type]),input.ag-input-field-input[type=text],input.ag-input-field-input[type=number],input.ag-input-field-input[type=tel],input.ag-input-field-input[type=date],input.ag-input-field-input[type=datetime-local],textarea.ag-input-field-input){border-left:none;border-right:none;border-top:none}";export{t as inputStyleUnderlinedCSS};

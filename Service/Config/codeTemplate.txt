@@ -1,0 +1,156 @@
+
+
+function init() {
+    //设定语言 及模块 以及处理函数
+    CodeInterface["自定义语言"] = {
+        "Http": {
+            func: Http,
+            isHTTP: true,//只有HTTP请求显示这个选项
+            isWebsocket: false,
+            isTCP: false
+        }
+    }
+    CodeInterface["鱼刺模块WinhttpR"] = {
+        func: WinHttpR,
+        isHTTP: true,//只有HTTP请求显示这个选项
+        isWebsocket: false,
+        isTCP: false
+    }
+    CodeInterface["自定义2"] = {
+        func: Http,
+        isHTTP: true,//只有HTTP请求显示这个选项
+        isWebsocket: false,
+        isTCP: false
+    }
+}
+function Http(request) {
+    const req = request.Request;
+    if (request.isTCP) {
+        /*
+        req 结构信息
+        {
+                    Host: 域名信息(如果有)
+                    IP: 服务器IP信息
+                    TmpFile: 发送数据缓存本地文件（使用 *SunnyNetV4|.0.0.|SunnyNetV4* 分割多个发送记录 ）.你如果不太会用，就参考默认（生成后的代码）
+        }
+        */
+        return;
+    }
+
+    if (request.isWebsocket) {
+
+        /*
+        {
+                    Method: 请求方法
+                    URL: 请求URL
+                    Header: 提交协议头信息 结构如下:{key:[value1,value2]}
+                    ServerIP: 服务器响应IP
+                    TmpFile: 发送数据缓存本地文件（使用 *SunnyNetV4|.0.0.|SunnyNetV4* 分割多个发送记录 ）.你如果不太会用，就参考默认（生成后的代码）
+        }
+        */
+        return;
+    }
+
+    if (request.isHTTP) {
+        /*
+        {
+                    Method: 请求方法
+                    URL: 请求URL
+                    Header: 提交协议头信息 结构如下:{key:[value1,value2]}
+                    Body: 类型为 Uint8Array //你可以使用 bytesToString 转为字符串 //使用bytesToBase64 转 base64字符串
+                    ServerIP: 服务器响应IP
+        }
+        */
+        let h = req.Method + " " + req.URL + "\r\n"
+        Object.keys(req.Header).forEach(key => {
+            for (let i = 0; i < req.Header[key].length; i++) {
+                h += key + ": " + req.Header[key][i] + "\r\n"
+            }
+        });
+        h += "\r\n" + bytesToString(req.Body)
+        return "我是生成的代码->(请在->常用工具->代码生成->编写生成代码的逻辑)\r\n\r\n提交的数据是:\r\n\r\n" + h;
+    }
+}
+function BodyIsAnsi(Body) {
+    for (let i = 0; i < Body.length; i++) {
+        if (Body[i] < 9) {
+            return false;
+        }
+    }
+    return true;
+}
+function WinHttpR(request) {
+    const req = request.Request;
+    //Body 是否为有不可见字符，返回 false 表示有不可见字符
+    const IsAnsi = BodyIsAnsi(req.Body);
+    //易语言代码头部
+    let code = ".版本 2\r\n\r\n";
+    code += ".子程序 SunnyNet自定义生成的代码函数, 文本型\r\n";
+    code += ".局部变量 局_HTTP, WinHttpR\r\n";
+    code += ".局部变量 局_请求地址, 文本型\r\n";
+    if (req.Body.length > 0) {
+        code += ".局部变量 局_提交数据, 文本型\r\n";
+    }
+    code += ".局部变量 局_响应字节集, 字节集\r\n";
+    code += ".局部变量 局_响应文本, 文本型\r\n";
+    code += "\r\n";
+    code += "局_请求地址 ＝ “" + req.URL + "”\r\n";
+    if (req.Body.length > 0) {
+        if (IsAnsi) {
+            //标准的字符串 
+            const str = bytesToString(req.Body);
+            if (!str.includes('"')) {
+                code += `局_提交数据 ＝ “${str}”\r\n`;
+            } else {
+                const replacements = ["'", "#", "*", "^", "~", "!", "$", "·"];
+                let replaceChar = null;
+                for (const ch of replacements) {
+                    if (!str.includes(ch)) {
+                        replaceChar = ch;
+                        break;
+                    }
+                }
+                if (replaceChar === null) {
+                    // 所有备选字符都被占用了，无法替换
+                    code += `局_提交数据 ＝ “${str}”\r\n`;  // 或者抛错、截断等
+                } else {
+                    const replaced = str.replaceAll('"', replaceChar);
+                    code += `局_提交数据 ＝ 子文本替换 (“${replaced}”, “${replaceChar}”, #引号, , , 真)\r\n`;
+                }
+            }
+
+        } else {
+            //非标准的字符串，比如可能有图片，或加密后的二进制数据
+            code += "局_提交数据 ＝ “" + bytesToBase64(req.Body) + "”\r\n";
+        }
+    }
+
+    code += "局_HTTP.Open (“" + req.Method + "”, 局_请求地址)\r\n\r\n";
+    Object.keys(req.Header).forEach(key => {
+        for (let i = 0; i < req.Header[key].length; i++) {
+            if (key === "Content-Length") {
+                code += "# ";
+            }
+            if (key === "Content-Encoding") {
+                code += "# ";
+            }
+            code += "局_HTTP.SetHeader (“" + key + "”, “" + req.Header[key][i] + "”)\r\n";
+        }
+    });
+
+    if (req.Body.length > 0) {
+        if (IsAnsi) {
+            code += "局_HTTP.Send (局_提交数据)\r\n";
+        } else {
+            code += "局_HTTP.SendBin (编码_Base64解码 (局_提交数据))\r\n";
+        }
+    } else {
+        code += "局_HTTP.Send ()\r\n";
+    }
+    code += "局_响应字节集 ＝ win.GetBody ()\r\n";
+    code += "局_响应文本 ＝ 编码_UTF8到ANSI (局_响应字节集)\r\n";
+    code += "调试输出 (局_响应文本)\r\n";
+    code += "返回 (局_响应文本)\r\n";
+    return code;
+}
+
